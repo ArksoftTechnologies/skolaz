@@ -38,6 +38,9 @@ def create_app(env: str = None) -> Flask:
     # ── Initialise Extensions ────────────────────────────────
     _init_extensions(app)
 
+    # ── Auto-run migrations (needed on Vercel / fresh deployments) ──
+    _run_migrations(app)
+
     # ── Register Blueprints ───────────────────────────────────
     _register_blueprints(app)
 
@@ -57,6 +60,51 @@ def create_app(env: str = None) -> Flask:
 
 
 # ── Private helpers ───────────────────────────────────────────────────────────
+
+def _run_migrations(app: Flask) -> None:
+    """Run any pending Alembic migrations automatically on startup.
+    Safe to call multiple times — only applies pending changes."""
+    try:
+        from flask_migrate import upgrade as flask_migrate_upgrade
+        with app.app_context():
+            flask_migrate_upgrade()
+            _seed_initial_data()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Migration/seed warning: {e}")
+
+
+def _seed_initial_data() -> None:
+    """Create roles and super admin on first boot if they don't exist."""
+    from app.models.user import Role, User
+    from app.extensions import bcrypt as _bcrypt
+
+    roles_data = [
+        {"name": "Super Admin",   "slug": "super_admin",   "description": "Full system access"},
+        {"name": "Staff",         "slug": "staff",          "description": "Internal application processing staff"},
+        {"name": "Advisor",       "slug": "advisor",        "description": "Student counselor and advisor"},
+        {"name": "Data Entry",    "slug": "data_entry",     "description": "Catalog and data management"},
+        {"name": "Agency Owner",  "slug": "agency",         "description": "Owner of a partner agency"},
+        {"name": "Agency Member", "slug": "agency_member",  "description": "Agent working for a partner agency"},
+        {"name": "Student",       "slug": "student",        "description": "Standard student applicant"},
+    ]
+    for rd in roles_data:
+        if not Role.query.filter_by(slug=rd["slug"]).first():
+            db.session.add(Role(**rd))
+    db.session.commit()
+
+    admin_email = "admin@skolaz.com"
+    if not User.query.filter_by(email=admin_email).first():
+        admin_role = Role.query.filter_by(slug="super_admin").first()
+        if admin_role:
+            admin = User(
+                first_name="Super", last_name="Admin",
+                email=admin_email, role_id=admin_role.id, status="active"
+            )
+            admin.set_password("Admin123!")
+            db.session.add(admin)
+            db.session.commit()
+
 
 def _init_extensions(app: Flask) -> None:
     """Initialise all Flask extensions with the app instance."""
