@@ -1,0 +1,98 @@
+{% import "macros/badges.html" as badges %}
+
+{% if pagination.items %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {% for school in pagination.items %}
+    <a href="{{ url_for('public.school_detail', school_id=school.id) }}" class="card-flat group flex flex-col hover:border-brand-300 transition-colors">
+        <!-- School Cover -->
+        <div class="h-40 bg-slate-100 border-b border-slate-200 relative overflow-hidden">
+            {% if school.cover_image %}
+            <img src="{{ school.cover_image }}" alt="{{ school.name }} Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            {% else %}
+            <!-- Placeholder pattern -->
+            <div class="absolute inset-0 opacity-[0.03] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-900 to-transparent"></div>
+            {% endif %}
+            
+            {% if school.is_featured %}
+            <div class="absolute top-3 right-3">
+                <span class="badge badge-purple shadow-sm">Featured</span>
+            </div>
+            {% endif %}
+            
+            <!-- School Logo Overlay -->
+            <div class="absolute -bottom-6 left-4">
+                <div class="w-12 h-12 rounded-lg bg-white shadow-md border border-slate-100 flex items-center justify-center overflow-hidden">
+                    {% if school.logo_image %}
+                    <img src="{{ school.logo_image }}" alt="Logo" class="w-full h-full object-cover">
+                    {% else %}
+                    <span class="text-lg font-bold text-slate-300">{{ school.name[:1] }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- School Details -->
+        <div class="p-5 pt-8 flex-1 flex flex-col">
+            <h3 class="text-[1.05rem] font-semibold text-slate-800 leading-tight group-hover:text-brand-600 transition-colors mb-1 line-clamp-2">
+                {{ school.name }}
+            </h3>
+            <p class="text-sm text-slate-500 mb-3 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                {{ school.city.name if school.city else '' }}{{ ', ' ~ school.country.name if school.country else '' }}
+            </p>
+            
+            <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                <div class="text-xs text-slate-500">
+                    <span class="font-semibold text-slate-700">{{ school.programs.filter_by(status='active').count() }}</span> Programs
+                </div>
+                {% if school.ranking %}
+                <div class="text-xs font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                    Rank #{{ school.ranking }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<!-- Pagination Controls -->
+{% if pagination.pages > 1 %}
+<div class="mt-12 flex justify-center">
+    <nav class="flex items-center gap-2">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('public.schools', page=pagination.prev_num, q=q) }}" class="btn-secondary h-9 px-3 text-sm">Prev</a>
+        {% endif %}
+        
+        <div class="flex items-center gap-1">
+            {% for p in pagination.iter_pages() %}
+                {% if p %}
+                    {% if p == pagination.page %}
+                    <span class="w-9 h-9 flex items-center justify-center rounded-lg bg-brand-600 text-white text-sm font-semibold shadow-sm">{{ p }}</span>
+                    {% else %}
+                    <a href="{{ url_for('public.schools', page=p, q=q) }}" class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-600 text-sm font-medium transition-colors">{{ p }}</a>
+                    {% endif %}
+                {% else %}
+                    <span class="text-slate-400 px-1">...</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+        
+        {% if pagination.has_next %}
+        <a href="{{ url_for('public.schools', page=pagination.next_num, q=q) }}" class="btn-secondary h-9 px-3 text-sm">Next</a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+
+{% else %}
+<!-- Empty State -->
+<div class="text-center py-16 bg-white rounded-2xl border border-slate-200">
+    <svg class="w-12 h-12 mx-auto text-slate-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+    <h3 class="text-lg font-semibold text-slate-900 mb-1">No schools found</h3>
+    <p class="text-slate-500 text-sm">We couldn't find any institutions matching your criteria.</p>
+    {% if q %}
+    <a href="{{ url_for('public.schools') }}" class="btn-secondary mt-6">Clear search filters</a>
+    {% endif %}
+</div>
+{% endif %}

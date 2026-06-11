@@ -1,0 +1,85 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}My Tasks{% endblock %}
+{% block page_subtitle %}Tasks assigned to you — open, in progress and completed.{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Dashboard',   url_for('advisor.dashboard'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>') }}
+{{ sidebar_link('My Students', url_for('advisor.students'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>') }}
+{{ sidebar_link('Tasks',       url_for('advisor.tasks'),    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>', active=True) }}
+{% endblock %}
+
+{% block dashboard_content %}
+
+{# Status tabs #}
+<div class="flex gap-1.5 mb-6">
+    {% for tab_status, tab_label in [('open','Open'),('in_progress','In Progress'),('done','Done'),('cancelled','Cancelled')] %}
+    <a href="{{ url_for('advisor.tasks', status=tab_status) }}"
+       class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
+              {% if status == tab_status %}bg-brand-600 text-white{% else %}bg-white border border-slate-200 text-slate-600 hover:border-slate-300{% endif %}">
+        {{ tab_label }}
+    </a>
+    {% endfor %}
+</div>
+
+<div class="space-y-3">
+    {% for task in paginator.items %}
+    <div class="card p-5 flex items-start gap-4 {% if task.is_overdue %}border-red-200{% endif %}">
+        {# Priority dot #}
+        <div class="mt-1 flex-shrink-0">
+            {% if task.priority == 'urgent' %}<span class="w-3 h-3 rounded-full bg-red-500 block"></span>
+            {% elif task.priority == 'high' %}<span class="w-3 h-3 rounded-full bg-amber-500 block"></span>
+            {% elif task.priority == 'medium' %}<span class="w-3 h-3 rounded-full bg-blue-400 block"></span>
+            {% else %}<span class="w-3 h-3 rounded-full bg-slate-300 block"></span>{% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+                <p class="text-sm font-semibold text-slate-800">{{ task.title }}</p>
+                {{ badges.status_badge(task.status) }}
+            </div>
+            {% if task.description %}
+            <p class="text-xs text-slate-500 mt-1 line-clamp-2">{{ task.description }}</p>
+            {% endif %}
+            <div class="flex items-center gap-4 mt-2 text-xs text-slate-400">
+                {% if task.student %}
+                <a href="{{ url_for('students.detail', student_id=task.student_id) }}" class="text-brand-600 hover:text-brand-700 font-medium">
+                    {{ task.student.full_name }}
+                </a>
+                {% endif %}
+                {% if task.due_date %}
+                <span class="{% if task.is_overdue %}text-red-500 font-semibold{% endif %}">
+                    Due {{ task.due_date|timeago }}
+                </span>
+                {% endif %}
+                <span>{{ task.priority|title }} priority</span>
+            </div>
+        </div>
+        {% if task.status in ['open', 'in_progress'] %}
+        <div class="flex-shrink-0">
+            <button class="btn-ghost text-xs px-2 py-1 text-slate-500">Mark Done</button>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="card py-16 text-center">
+        <svg class="w-10 h-10 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p class="text-sm text-slate-400">No {{ status }} tasks.</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if paginator.pages > 1 %}
+<div class="flex items-center justify-between mt-6">
+    <p class="text-sm text-slate-500">{{ paginator.total }} tasks</p>
+    <div class="flex items-center gap-1">
+        {% if paginator.has_prev %}<a href="?page={{ paginator.prev_num }}&status={{ status }}" class="btn-secondary text-xs px-3 py-1.5">← Prev</a>{% endif %}
+        {% for p in paginator.iter_pages() %}
+            {% if p %}<a href="?page={{ p }}&status={{ status }}" class="w-8 h-8 flex items-center justify-center rounded-lg text-sm {% if p == paginator.page %}bg-brand-600 text-white{% else %}bg-white border border-slate-200 text-slate-600{% endif %}">{{ p }}</a>
+            {% else %}<span class="px-1 text-slate-400">…</span>{% endif %}
+        {% endfor %}
+        {% if paginator.has_next %}<a href="?page={{ paginator.next_num }}&status={{ status }}" class="btn-secondary text-xs px-3 py-1.5">Next →</a>{% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

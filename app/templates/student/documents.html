@@ -1,0 +1,72 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}My Documents{% endblock %}
+{% block page_subtitle %}Manage your uploaded documents and track their verification status.{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('My Dashboard',  url_for('student_portal.dashboard'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>') }}
+{{ sidebar_link('My Documents',  url_for('student_portal.documents'),  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>', active=True) }}
+{{ sidebar_link('Browse Schools',url_for('public.schools'),            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+
+<div class="mb-6 flex justify-between items-center">
+    <h2 class="text-lg font-semibold text-slate-800">Uploaded Documents</h2>
+    <button type="button" class="btn-primary" onclick="alert('Upload functionality coming soon.')">
+        <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Upload New
+    </button>
+</div>
+
+<div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
+                <tr>
+                    <th scope="col" class="px-6 py-4">Document Type</th>
+                    <th scope="col" class="px-6 py-4">File Name</th>
+                    <th scope="col" class="px-6 py-4">Uploaded</th>
+                    <th scope="col" class="px-6 py-4">Status</th>
+                    <th scope="col" class="px-6 py-4 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for doc in documents %}
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-4 font-medium text-slate-800">
+                        {{ doc.document_type|replace('_', ' ')|title }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            <span class="truncate max-w-[200px]">{{ doc.file_path.split('/')[-1] if doc.file_path else 'Unknown' }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {{ doc.uploaded_at.strftime('%Y-%m-%d %H:%M') if doc.uploaded_at else '—' }}
+                    </td>
+                    <td class="px-6 py-4">
+                        {{ badges.status_badge(doc.status) }}
+                    </td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <a href="#" class="text-brand-600 hover:text-brand-800 transition-colors">View</a>
+                        <a href="#" class="text-red-500 hover:text-red-700 transition-colors">Delete</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                        <svg class="w-12 h-12 mx-auto text-slate-200 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <p class="font-medium text-slate-700">No documents found</p>
+                        <p class="text-xs text-slate-400 mt-1">You haven't uploaded any documents yet.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

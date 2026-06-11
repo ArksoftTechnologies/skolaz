@@ -1,0 +1,191 @@
+{% extends "base/dashboard_layout.html" %}
+{% from "macros/data_entry_sidebar.html" import de_sidebar %}
+{% import "macros/badges.html" as badges %}
+{% import "macros/forms.html" as forms %}
+
+{% block page_title %}{{ program.name }}{% endblock %}
+{% block page_subtitle %}{{ program.school.name if program.school else '' }} · {{ program.level|replace('_',' ')|title }}{% endblock %}
+
+{% block breadcrumb_current %}
+<a href="{{ url_for('data_entry.programs') }}" class="hover:text-slate-900 transition-colors">Programs</a>
+<span class="mx-2 text-slate-300">/</span>
+<span class="text-slate-900 font-medium">{{ program.name }}</span>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('data_entry.create_program') }}?school_id={{ program.school_id }}&edit=0" class="btn-secondary text-sm">Edit Full Details</a>
+{% endblock %}
+
+{% block topbar_action %}
+<div class="flex items-center gap-2">
+    <a href="{{ url_for('data_entry.csv_import_page') }}" class="btn-secondary text-sm">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Bulk Import CSV
+    </a>
+</div>
+{% endblock %}
+{% block sidebar_menu %}{{ de_sidebar("programs") }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+    {# Info sidebar #}
+    <div class="space-y-5">
+        <div class="card p-5 space-y-2.5 text-sm">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Program Details</h3>
+            {% for label, value in [
+                ('Institution',  program.school.name if program.school else '—'),
+                ('Level',        program.level|replace('_',' ')|title),
+                ('Study Mode',   program.study_mode|replace('-',' ')|title if program.study_mode else '—'),
+                ('Duration',     ((program.duration_months|string ~ ' months') if program.duration_months else '—')),
+                ('Tuition',      (program.currency ~ ' ' ~ program.tuition_fee|int) if program.tuition_fee else '—'),
+                ('App. Fee',     (program.currency ~ ' ' ~ program.application_fee|int) if program.application_fee else '—'),
+                ('IELTS',        program.ielts_requirement or '—'),
+                ('TOEFL',        program.toefl_requirement or '—'),
+                ('GPA',          program.gpa_requirement or '—'),
+                ('Processing',   ((program.processing_weeks|string ~ ' weeks') if program.processing_weeks else '—')),
+                ('Intakes',      intakes|length),
+            ] %}
+            <div class="flex justify-between">
+                <span class="text-slate-500">{{ label }}</span>
+                <span class="font-medium text-slate-800">{{ value }}</span>
+            </div>
+            {% endfor %}
+            <div class="pt-2 flex gap-2 flex-wrap">
+                {{ badges.status_badge(program.status) }}
+                {% if program.is_featured %}<span class="badge badge-amber">⭐ Featured</span>{% endif %}
+            </div>
+        </div>
+
+        {# Quick edit status #}
+        <div class="card p-5">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Quick Actions</h3>
+            <form method="POST" action="{{ url_for('data_entry.edit_program', program_id=program.id) }}" class="space-y-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="name"     value="{{ program.name }}">
+                <input type="hidden" name="level"    value="{{ program.level }}">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-medium text-slate-600">Status</label>
+                    <select name="status" class="input-base text-sm">
+                        {% for v in ['draft','active','inactive'] %}
+                        <option value="{{ v }}" {% if program.status == v %}selected{% endif %}>{{ v|title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="is_featured" id="feat_{{ program.id }}" {% if program.is_featured %}checked{% endif %} class="w-4 h-4 rounded border-slate-300 text-brand-600">
+                    <label for="feat_{{ program.id }}" class="text-sm text-slate-600">Featured</label>
+                </div>
+                <button type="submit" class="btn-primary text-xs w-full justify-center">Update</button>
+            </form>
+        </div>
+    </div>
+
+    {# Intakes management #}
+    <div class="xl:col-span-2 space-y-5">
+
+        {# Add intake #}
+        <div class="card p-5">
+            <h3 class="text-sm font-semibold text-slate-800 mb-4">Add Intake</h3>
+            <form method="POST" action="{{ url_for('data_entry.create_intake', program_id=program.id) }}"
+                  class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-medium text-slate-600">Month <span class="text-red-500">*</span></label>
+                    <select name="month" class="input-base" required>
+                        <option value="">Month</option>
+                        {% for m, ml in [(1,'January'),(2,'February'),(3,'March'),(4,'April'),(5,'May'),(6,'June'),(7,'July'),(8,'August'),(9,'September'),(10,'October'),(11,'November'),(12,'December')] %}
+                        <option value="{{ m }}">{{ ml }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-medium text-slate-600">Year <span class="text-red-500">*</span></label>
+                    <select name="year" class="input-base" required>
+                        {% for y in range(2025, 2030) %}
+                        <option value="{{ y }}">{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-medium text-slate-600">Deadline</label>
+                    <input type="date" name="deadline" class="input-base">
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-medium text-slate-600">Spots Available</label>
+                    <input type="number" name="spots_available" placeholder="∞" class="input-base" min="0">
+                </div>
+                <div class="col-span-2 md:col-span-3 flex items-center gap-2">
+                    <input type="checkbox" name="is_open" id="is_open" checked class="w-4 h-4 rounded border-slate-300 text-brand-600">
+                    <label for="is_open" class="text-sm text-slate-600">Open for applications</label>
+                </div>
+                <button type="submit" class="btn-primary col-span-2 md:col-span-1 justify-center">Add Intake</button>
+            </form>
+        </div>
+
+        {# Intakes list #}
+        <div class="table-container">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-slate-800">Intakes ({{ intakes|length }})</h3>
+            </div>
+            <table class="table-base">
+                <thead>
+                    <tr><th>Intake</th><th>Deadline</th><th>Spots</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% set months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
+                    {% for intake in intakes %}
+                    <tr>
+                        <td class="font-semibold text-slate-800">{{ months[intake.month] }} {{ intake.year }}</td>
+                        <td class="text-sm text-slate-600">
+                            {% if intake.deadline %}{{ intake.deadline.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                        </td>
+                        <td class="text-sm text-slate-600">{{ intake.spots_available or '∞' }}</td>
+                        <td>{{ badges.status_badge('active' if intake.is_open else 'inactive') }}</td>
+                        <td>
+                            <div class="flex items-center gap-3" x-data="{ editing: false }">
+                                <button @click="editing = !editing" class="text-xs text-brand-600 hover:text-brand-700 font-medium">Edit</button>
+                                <form method="POST" action="{{ url_for('data_entry.delete_intake', intake_id=intake.id) }}"
+                                      onsubmit="return confirm('Delete this intake?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="text-xs text-red-500 hover:text-red-700">Delete</button>
+                                </form>
+                                {# Inline edit #}
+                                <div x-show="editing" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                                    <div class="bg-white rounded-2xl p-6 w-80 shadow-xl" @click.stop>
+                                        <h4 class="text-sm font-semibold text-slate-800 mb-4">Edit Intake — {{ months[intake.month] }} {{ intake.year }}</h4>
+                                        <form method="POST" action="{{ url_for('data_entry.edit_intake', intake_id=intake.id) }}" class="space-y-3">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div>
+                                                <label class="text-xs font-medium text-slate-600 block mb-1">Deadline</label>
+                                                <input type="date" name="deadline" class="input-base text-sm"
+                                                       value="{{ intake.deadline.strftime('%Y-%m-%d') if intake.deadline else '' }}">
+                                            </div>
+                                            <div>
+                                                <label class="text-xs font-medium text-slate-600 block mb-1">Spots Available</label>
+                                                <input type="number" name="spots_available" class="input-base text-sm"
+                                                       value="{{ intake.spots_available or '' }}" placeholder="Leave blank for unlimited">
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <input type="checkbox" name="is_open" id="iopen_{{ intake.id }}" {% if intake.is_open %}checked{% endif %} class="w-4 h-4 rounded border-slate-300 text-brand-600">
+                                                <label for="iopen_{{ intake.id }}" class="text-sm text-slate-600">Open for applications</label>
+                                            </div>
+                                            <div class="flex gap-2 pt-2">
+                                                <button type="submit" class="btn-primary flex-1 justify-center text-sm">Save</button>
+                                                <button type="button" @click="editing = false" class="btn-secondary flex-1 justify-center text-sm">Cancel</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="py-10 text-center text-sm text-slate-400">No intakes added yet. Use the form above.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

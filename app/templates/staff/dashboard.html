@@ -1,0 +1,109 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/stats.html" as s %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Staff Dashboard{% endblock %}
+{% block page_subtitle %}Application pipeline, student activity, and team workload.{% endblock %}
+
+{% block topbar_action %}
+<a href="{{ url_for('students.create') }}" class="btn-primary text-sm">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    New Student
+</a>
+{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Dashboard',    url_for('staff.dashboard'),    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>', active=True) }}
+{{ sidebar_link('Applications', url_for('staff.applications'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>') }}
+{{ sidebar_link('Students',     url_for('staff.students'),     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>') }}
+{{ sidebar_link('Catalog',      url_for('data_entry.dashboard'),'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+
+{# ── KPI Row ──────────────────────────────────────────────────────── #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    {{ s.kpi_card('Applications',      stats.total_applications, '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>',    'blue',   '+5 this week', True, 'All pipeline stages') }}
+    {{ s.kpi_card('Pending Review',    stats.pending_review,     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>',                                                                                   'amber',  '',             True, 'Awaiting action') }}
+    {{ s.kpi_card('Offers Issued',     stats.offers_issued,      '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>', 'green',  '', True, 'Accepted offers') }}
+    {{ s.kpi_card('Students Enrolled', stats.enrolled,           '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>',                                                                  'purple', '', True, 'Fully enrolled') }}
+</div>
+
+{# ── Pipeline + Recent Table ──────────────────────────────────────── #}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    {# Recent Applications wide table #}
+    <div class="lg:col-span-2 card overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-800">Recent Applications</h2>
+            <a href="{{ url_for('staff.applications') }}" class="text-xs font-medium text-brand-600 hover:text-brand-700">View pipeline →</a>
+        </div>
+        <table class="table-base">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Institution</th>
+                    <th>Stage</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in recent_applications %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('students.detail', student_id=app.student_id) }}" class="flex items-center gap-2.5 group">
+                            <div class="w-7 h-7 rounded-full bg-brand-100 flex items-center justify-center text-[11px] font-bold text-brand-700 flex-shrink-0">
+                                {{ app.student.first_name[0] if app.student else '?' }}{{ app.student.last_name[0] if app.student else '' }}
+                            </div>
+                            <span class="font-medium text-slate-800 group-hover:text-brand-600 transition-colors text-sm">{{ app.student.first_name }} {{ app.student.last_name }}</span>
+                        </a>
+                    </td>
+                    <td class="text-slate-600 text-sm">{{ app.program.campus.school.name if app.program else '—' }}</td>
+                    <td>
+                        <span class="badge badge-slate text-xs">Stage {{ app.current_stage or '—' }}</span>
+                    </td>
+                    <td>{{ badges.status_badge(app.status) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="py-12 text-center">
+                        <svg class="w-8 h-8 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <p class="text-sm text-slate-400">No applications yet.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# Stage Breakdown #}
+    <div class="card overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-800">Pipeline Stages</h2>
+        </div>
+        <div class="p-6 space-y-3">
+            {% set stage_data = [
+                ('Enquiry', 14, 'bg-slate-300'),
+                ('Documents Submitted', 9, 'bg-brand-400'),
+                ('School Review', 6, 'bg-brand-500'),
+                ('Conditional Offer', 4, 'bg-amber-400'),
+                ('Unconditional Offer', 3, 'bg-green-400'),
+                ('Visa Applied', 2, 'bg-purple-400'),
+                ('Enrolled', 1, 'bg-green-600'),
+            ] %}
+            {% for stage, count, color in stage_data %}
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs text-slate-600 font-medium">{{ stage }}</span>
+                    <span class="text-xs font-semibold text-slate-800">{{ count }}</span>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-1.5">
+                    <div class="{{ color }} h-1.5 rounded-full transition-all duration-500" style="width: {{ (count / 14 * 100)|int }}%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

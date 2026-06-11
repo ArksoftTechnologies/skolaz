@@ -1,0 +1,103 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Schools{% endblock %}
+{% block page_subtitle %}Institution catalog — all partner and non-partner schools.{% endblock %}
+
+{% block topbar_action %}
+<a href="{{ url_for('data_entry.create_school') }}" class="btn-primary text-sm">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Add School
+</a>
+{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Schools',   url_for('institutions.schools'),  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>', active=True) }}
+{{ sidebar_link('Programs',  url_for('institutions.programs'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="card p-4 mb-6">
+    <form method="GET" class="flex flex-wrap gap-3 items-end">
+        <div class="flex-1 min-w-[200px]">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Search</label>
+            <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                <input type="text" name="q" value="{{ q }}" placeholder="School name..." class="input-base pl-9">
+            </div>
+        </div>
+        <div class="w-44">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Country</label>
+            <select name="country" class="input-base">
+                <option value="">All Countries</option>
+                {% for c in countries %}
+                <option value="{{ c.id }}" {% if country == c.id|string %}selected{% endif %}>{{ c.flag_emoji or '' }} {{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="w-36">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Status</label>
+            <select name="status" class="input-base">
+                <option value="">All</option>
+                <option value="active"   {% if status=='active'   %}selected{% endif %}>Active</option>
+                <option value="pending"  {% if status=='pending'  %}selected{% endif %}>Pending</option>
+                <option value="draft"    {% if status=='draft'    %}selected{% endif %}>Draft</option>
+                <option value="inactive" {% if status=='inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+        <button type="submit" class="btn-primary">Filter</button>
+        {% if q or country or status %}<a href="{{ url_for('institutions.schools') }}" class="btn-secondary">Clear</a>{% endif %}
+    </form>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+    {% for school in paginator.items %}
+    <a href="{{ url_for('institutions.school_detail', school_id=school.id) }}"
+       class="card p-5 flex items-start gap-4 hover:shadow-card-hover transition-shadow group">
+        <div class="w-12 h-12 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {% if school.logo_url %}
+            <img src="{{ school.logo_url }}" class="w-full h-full object-contain p-1" alt="{{ school.name }}">
+            {% else %}
+            <svg class="w-6 h-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            {% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+                <h3 class="text-sm font-semibold text-slate-800 group-hover:text-brand-600 transition-colors leading-tight">{{ school.name }}</h3>
+                {{ badges.status_badge(school.status) }}
+            </div>
+            <p class="text-xs text-slate-500 mt-1">
+                {{ school.country.flag_emoji if school.country else '' }}
+                {{ school.city.name if school.city else '' }}{% if school.city %}, {% endif %}{{ school.country.name if school.country else '—' }}
+            </p>
+            <div class="flex items-center gap-3 mt-3 text-xs text-slate-400">
+                {% if school.ranking %}<span>🏆 #{{ school.ranking }}</span>{% endif %}
+                {% if school.is_partner %}<span class="badge badge-green text-[10px]">Partner</span>{% endif %}
+                {% if school.is_featured %}<span class="badge badge-blue text-[10px]">Featured</span>{% endif %}
+            </div>
+        </div>
+    </a>
+    {% else %}
+    <div class="col-span-full py-16 text-center">
+        <svg class="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        <p class="text-slate-400 text-sm">No schools found.</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if paginator.pages > 1 %}
+<div class="flex items-center justify-between mt-6">
+    <p class="text-sm text-slate-500">{{ paginator.total }} schools</p>
+    <div class="flex items-center gap-1">
+        {% if paginator.has_prev %}<a href="?page={{ paginator.prev_num }}&q={{ q }}" class="btn-secondary text-xs px-3 py-1.5">← Prev</a>{% endif %}
+        {% for p in paginator.iter_pages() %}
+            {% if p %}
+            <a href="?page={{ p }}&q={{ q }}"
+               class="w-8 h-8 flex items-center justify-center rounded-lg text-sm {% if p == paginator.page %}bg-brand-600 text-white{% else %}bg-white border border-slate-200 text-slate-600{% endif %}">{{ p }}</a>
+            {% else %}<span class="px-1 text-slate-400">…</span>{% endif %}
+        {% endfor %}
+        {% if paginator.has_next %}<a href="?page={{ paginator.next_num }}&q={{ q }}" class="btn-secondary text-xs px-3 py-1.5">Next →</a>{% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

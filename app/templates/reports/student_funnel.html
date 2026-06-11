@@ -1,0 +1,85 @@
+{% extends "base/dashboard_layout.html" %}
+
+{% block page_title %}Application Funnel{% endblock %}
+{% block page_subtitle %}Student count at each stage of the pipeline.{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Overview',    url_for('reports.index'),           '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>') }}
+{{ sidebar_link('Funnel',      url_for('reports.student_funnel'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>', active=True) }}
+{{ sidebar_link('Commissions', url_for('reports.commissions_report'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+{% set max_val = funnel.values()|max if funnel else 1 %}
+{% set total   = funnel.values()|sum %}
+
+<div class="card overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+            <h2 class="text-sm font-semibold text-slate-800">Pipeline Funnel</h2>
+            <p class="text-xs text-slate-500 mt-0.5">{{ total }} total applications across all active stages</p>
+        </div>
+        <a href="{{ url_for('reports.funnel_data_api') }}" target="_blank" class="btn-secondary text-xs py-1.5 px-3">Export JSON</a>
+    </div>
+    <div class="p-6 space-y-4">
+        {% for stage, count in funnel.items() %}
+        {% set pct = ((count / max_val) * 100)|int if max_val else 0 %}
+        {% set colors = ['bg-slate-400','bg-blue-400','bg-blue-500','bg-brand-400','bg-brand-500','bg-brand-600','bg-indigo-500','bg-violet-500','bg-purple-500','bg-amber-500','bg-amber-600','bg-green-400','bg-green-500','bg-green-600'] %}
+        {% set color = colors[loop.index0 % colors|length] %}
+        <div>
+            <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                    <a href="{{ url_for('applications.index', stage=stage) }}"
+                       class="text-sm font-medium text-slate-700 hover:text-brand-600 transition-colors">
+                        {{ STAGE_LABELS[stage] }}
+                    </a>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-400">{{ ((count / total * 100)|int if total else 0) }}%</span>
+                    <span class="text-sm font-bold text-slate-800 w-8 text-right">{{ count }}</span>
+                </div>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                <div class="{{ color }} h-2.5 rounded-full transition-all duration-700"
+                     style="width: {{ pct }}%"></div>
+            </div>
+        </div>
+        {% else %}
+        <p class="text-sm text-slate-400 py-8 text-center">No data available.</p>
+        {% endfor %}
+    </div>
+</div>
+
+{# Summary table #}
+<div class="table-container mt-6">
+    <table class="table-base">
+        <thead>
+            <tr>
+                <th>Stage</th>
+                <th class="text-right">Count</th>
+                <th class="text-right">% of Total</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stage, count in funnel.items() %}
+            <tr>
+                <td class="font-medium text-slate-800">{{ STAGE_LABELS[stage] }}</td>
+                <td class="text-right font-semibold text-slate-800">{{ count }}</td>
+                <td class="text-right text-slate-500">{{ ((count / total * 100)|round(1) if total else 0) }}%</td>
+                <td class="text-right">
+                    <a href="{{ url_for('applications.index', stage=stage) }}"
+                       class="text-xs text-brand-600 hover:text-brand-700 font-medium">View →</a>
+                </td>
+            </tr>
+            {% endfor %}
+            <tr class="font-bold">
+                <td>Total</td>
+                <td class="text-right">{{ total }}</td>
+                <td class="text-right text-slate-400">100%</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "base/dashboard_layout.html" %}
+{% from "macros/data_entry_sidebar.html" import de_sidebar %}
+{% import "macros/forms.html" as forms %}
+
+{% block page_title %}{% if edit %}Edit {{ school.name }}{% else %}Add Institution{% endif %}{% endblock %}
+{% block page_subtitle %}{% if edit %}Update institution details.{% else %}Register a new school or university in the catalog.{% endif %}{% endblock %}
+
+{% block breadcrumb_current %}
+<a href="{{ url_for('data_entry.schools') }}" class="hover:text-slate-900 transition-colors">Institutions</a>
+<span class="mx-2 text-slate-300">/</span>
+<span class="text-slate-900 font-medium">{% if edit %}Edit{% else %}Add New{% endif %}</span>
+{% endblock %}
+
+{% block topbar_action %}
+<div class="flex items-center gap-2">
+    <a href="{{ url_for('data_entry.csv_import_page') }}" class="btn-secondary text-sm">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Bulk Import CSV
+    </a>
+</div>
+{% endblock %}
+{% block sidebar_menu %}{{ de_sidebar("schools") }}{% endblock %}
+
+{% block dashboard_content %}
+{% set action = url_for('data_entry.edit_school', school_id=school.id) if edit else url_for('data_entry.create_school_post') %}
+<div class="max-w-3xl">
+    <form method="POST" action="{{ action }}" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        {# Basic Info #}
+        <div class="card p-6 space-y-5">
+            {{ forms.form_section('Basic Information') }}
+            {{ forms.input('name', 'Institution Name', value=school.name if school else '', required=True, placeholder='e.g. University of Toronto') }}
+            {{ forms.input('short_description', 'Short Description', value=school.short_description if school else '', placeholder='One-line summary (shown on cards)') }}
+            {{ forms.textarea('description', 'Full Description', value=school.description if school else '', rows=3, placeholder='Detailed description for public profile...') }}
+
+            <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-slate-700">Institution Type</label>
+                <select name="institution_type" class="input-base">
+                    {% for v, l in [('university','University'),('college','College'),('institute','Institute'),('school','School'),('academy','Academy')] %}
+                    <option value="{{ v }}" {% if school and school.institution_type == v %}selected{% endif %}>{{ l }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        {# Location #}
+        <div class="card p-6 space-y-5">
+            {{ forms.form_section('Location') }}
+            <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-slate-700">Country <span class="text-red-500">*</span></label>
+                <select name="country_id" id="school-country" class="input-base" required
+                        hx-get="{{ url_for('data_entry.ajax_states') }}"
+                        hx-target="#school-state"
+                        hx-trigger="change"
+                        hx-include="this">
+                    <option value="">Select country...</option>
+                    {% for c in countries %}
+                    <option value="{{ c.id }}" {% if school and school.country_id == c.id %}selected{% endif %}>{{ c.flag_emoji or '' }} {{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-slate-700">State / Province</label>
+                    <select name="state_id" id="school-state" class="input-base"
+                            hx-get="{{ url_for('data_entry.ajax_cities') }}"
+                            hx-target="#school-city"
+                            hx-trigger="change"
+                            hx-include="[name='country_id'],[name='state_id']">
+                        <option value="">Select state (optional)</option>
+                    </select>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-slate-700">City</label>
+                    <select name="city_id" id="school-city" class="input-base">
+                        <option value="">Select city (optional)</option>
+                    </select>
+                </div>
+            </div>
+            {{ forms.input('address', 'Street Address', value=school.address if school else '', placeholder='123 University Ave') }}
+            <div class="grid grid-cols-2 gap-4">
+                {{ forms.input('website', 'Website URL', value=school.website if school else '', placeholder='https://university.edu') }}
+                {{ forms.input('email',   'Contact Email', value=school.email if school else '', placeholder='admissions@university.edu') }}
+            </div>
+            {{ forms.input('phone', 'Phone Number', value=school.phone if school else '', placeholder='+1 416 978 2011') }}
+        </div>
+
+        {# Academic Info #}
+        <div class="card p-6 space-y-5">
+            {{ forms.form_section('Academic Information') }}
+            <div class="grid grid-cols-2 gap-4">
+                {{ forms.input('ranking',         'World Ranking',        value=(school.ranking|string if school and school.ranking else ''),          placeholder='e.g. 34') }}
+                {{ forms.input('ranking_source',  'Ranking Source',       value=(school.ranking_source or '' if school else ''),                       placeholder='QS, Times, etc.') }}
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+                {{ forms.input('established_year',     'Established Year',      value=(school.established_year|string if school and school.established_year else ''),    placeholder='1827') }}
+                {{ forms.input('total_students',        'Total Students',        value=(school.total_students|string if school and school.total_students else ''),        placeholder='40000') }}
+                {{ forms.input('international_students','International Students',value=(school.international_students|string if school and school.international_students else ''), placeholder='8000') }}
+            </div>
+            {{ forms.input('acceptance_rate', 'Acceptance Rate (%)', value=(school.acceptance_rate|string if school and school.acceptance_rate else ''), placeholder='45.5') }}
+        </div>
+
+        {# Financial & Commission #}
+        <div class="card p-6 space-y-5">
+            {{ forms.form_section('Financials & Commission') }}
+            <div class="grid grid-cols-3 gap-4">
+                {{ forms.input('tuition_min', 'Tuition Min', value=(school.tuition_min|string if school and school.tuition_min else ''), placeholder='5000') }}
+                {{ forms.input('tuition_max', 'Tuition Max', value=(school.tuition_max|string if school and school.tuition_max else ''), placeholder='30000') }}
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-slate-700">Currency</label>
+                    <select name="currency" class="input-base">
+                        {% for cur in ['GBP','USD','EUR','CAD','AUD','NZD','NGN'] %}
+                        <option value="{{ cur }}" {% if school and school.currency == cur %}selected{% elif not school and cur == 'GBP' %}selected{% endif %}>{{ cur }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            {{ forms.input('default_commission_pct', 'Default Commission (%)', value=(school.default_commission_pct|string if school and school.default_commission_pct else ''), placeholder='10') }}
+        </div>
+
+        {# Media #}
+        <div class="card p-6 space-y-5">
+            {{ forms.form_section('Media (URLs)') }}
+            {{ forms.input('logo_url',        'Logo URL',        value=(school.logo_url or '' if school else ''),        placeholder='https://cdn.example.com/logo.png') }}
+            {{ forms.input('cover_image_url', 'Cover Image URL', value=(school.cover_image_url or '' if school else ''), placeholder='https://cdn.example.com/cover.jpg') }}
+        </div>
+
+        {# Settings #}
+        <div class="card p-6 space-y-4">
+            {{ forms.form_section('Settings') }}
+            <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-slate-700">Status</label>
+                <select name="status" class="input-base">
+                    {% for v, l in [('draft','Draft — not visible'),('pending','Pending — awaiting approval'),('active','Active — live on platform'),('inactive','Inactive')] %}
+                    <option value="{{ v }}" {% if school and school.status == v %}selected{% elif not school and v == 'pending' %}selected{% endif %}>{{ l }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                {{ forms.checkbox('is_partner',   'Partner institution',  checked=(school.is_partner if school else False)) }}
+                {{ forms.checkbox('is_featured',  'Featured on homepage', checked=(school.is_featured if school else False)) }}
+                {{ forms.checkbox('requires_gmat','Requires GMAT',        checked=(school.requires_gmat if school else False)) }}
+                {{ forms.checkbox('requires_gre', 'Requires GRE',         checked=(school.requires_gre if school else False)) }}
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            {{ forms.submit('Save Institution', full_width=False) }}
+            <a href="{{ url_for('data_entry.schools') }}" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

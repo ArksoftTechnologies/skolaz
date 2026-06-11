@@ -1,0 +1,121 @@
+{% extends "base/base.html" %}
+{% block title %}Two-Factor Authentication — Skolaz{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+    <div class="w-full max-w-[400px]" x-data="{
+        digits: ['', '', '', '', '', ''],
+        handleInput(index, event) {
+            const val = event.target.value.replace(/\D/g, '');
+            this.digits[index] = val.slice(-1);
+            if (val && index < 5) {
+                this.$refs['d' + (index + 1)].focus();
+            }
+            this.checkSubmit();
+        },
+        handleKeydown(index, event) {
+            if (event.key === 'Backspace' && !this.digits[index] && index > 0) {
+                this.$refs['d' + (index - 1)].focus();
+            }
+            if (event.key === 'ArrowLeft' && index > 0)  this.$refs['d' + (index - 1)].focus();
+            if (event.key === 'ArrowRight' && index < 5) this.$refs['d' + (index + 1)].focus();
+        },
+        handlePaste(event) {
+            const text = (event.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+            text.split('').forEach((ch, i) => { if (i < 6) this.digits[i] = ch; });
+            if (text.length > 0) this.$refs['d' + Math.min(text.length, 5)].focus();
+            this.checkSubmit();
+        },
+        checkSubmit() {
+            if (this.digits.every(d => d !== '')) {
+                this.$nextTick(() => document.getElementById('mfa-form').submit());
+            }
+        },
+        get code() { return this.digits.join(''); }
+    }">
+
+        <!-- Logo -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-brand-600 rounded-2xl shadow-lg shadow-brand-600/30 mb-4">
+                <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+            </div>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Two-factor authentication</h1>
+            <p class="text-sm text-slate-500 mt-1.5 leading-relaxed">Enter the 6-digit code from your authenticator app to continue.</p>
+        </div>
+
+        <!-- Error -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+            {% if category == 'error' %}
+            <div class="mb-5 flex items-center gap-2.5 p-3.5 bg-red-50 border border-red-200 rounded-xl">
+                <svg class="w-4 h-4 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-sm text-red-700">{{ message }}</p>
+            </div>
+            {% endif %}
+            {% endfor %}
+        {% endwith %}
+
+        <!-- Card -->
+        <div class="card p-8">
+            <form id="mfa-form" action="{{ url_for('auth.mfa_verify_post') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <!-- Hidden combined input -->
+                <input type="hidden" name="code" :value="code">
+
+                <!-- OTP digit boxes -->
+                <div class="flex items-center justify-center gap-3 mb-8" @paste.prevent="handlePaste($event)">
+                    {% for i in range(6) %}
+                    <input
+                        x-ref="d{{ i }}"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="1"
+                        :value="digits[{{ i }}]"
+                        @input="handleInput({{ i }}, $event)"
+                        @keydown="handleKeydown({{ i }}, $event)"
+                        class="w-11 h-14 text-center text-xl font-bold border-2 rounded-xl outline-none transition-all
+                               border-slate-200 bg-white text-slate-900
+                               focus:border-brand-500 focus:bg-brand-50/50 focus:shadow-sm focus:shadow-brand-100
+                               placeholder-slate-200"
+                        placeholder="·"
+                        autocomplete="off">
+                    {% if i == 2 %}
+                    <div class="w-3 flex items-center justify-center">
+                        <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- Submit -->
+                <button type="submit"
+                        class="btn-primary w-full justify-center h-11 text-sm"
+                        :disabled="digits.some(d => d === '')"
+                        :class="{ 'opacity-50 cursor-not-allowed': digits.some(d => d === '') }">
+                    Verify Code
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="mt-6 pt-5 border-t border-slate-100 text-center space-y-2">
+                <p class="text-sm text-slate-500">Code expires in
+                    <span class="font-semibold text-slate-700" x-data="{ t: 30 }" x-init="setInterval(() => { if(t > 0) t-- }, 1000)" x-text="t + 's'">30s</span>
+                </p>
+                <a href="{{ url_for('auth.login') }}" class="text-sm text-brand-600 hover:text-brand-700 font-medium transition-colors">
+                    ← Back to login
+                </a>
+            </div>
+        </div>
+
+        <!-- Helper -->
+        <div class="mt-6 text-center">
+            <p class="text-xs text-slate-400">
+                Lost access to your authenticator?
+                <a href="{{ url_for('auth.forgot_password') }}" class="text-brand-600 hover:text-brand-700 font-medium">Get help</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

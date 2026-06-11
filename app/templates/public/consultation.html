@@ -1,0 +1,53 @@
+{% extends "public/_public_base.html" %}
+{% block title %}Free Consultation — Skolaz{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl mx-auto px-4 sm:px-6 py-16">
+    <div class="text-center mb-10">
+        <h1 class="text-4xl font-bold text-slate-900 mb-3">Book a Free Consultation</h1>
+        <p class="text-slate-500 text-lg">Speak with an expert advisor about your study abroad goals — completely free, no commitment.</p>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+        <form class="space-y-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">First Name</label>
+                    <input type="text" name="first_name" placeholder="John" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Last Name</label>
+                    <input type="text" name="last_name" placeholder="Doe" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
+                <input type="email" name="email" placeholder="john@example.com" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Phone / WhatsApp</label>
+                <input type="tel" name="phone" placeholder="+1 234 567 8900" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Preferred Study Destination</label>
+                <select name="destination" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 bg-white">
+                    <option value="">Select a country...</option>
+                    {% for c in ['United Kingdom','Canada','Australia','USA','Germany','New Zealand','Ireland'] %}
+                    <option>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">Tell us about your goals</label>
+                <textarea name="message" rows="4" placeholder="Your current qualification, target course, budget, timeline..."
+                          class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 resize-none"></textarea>
+            </div>
+            <button type="submit" class="btn-cta w-full justify-center text-base py-3">
+                Request Free Consultation →
+            </button>
+            <p class="text-xs text-center text-slate-400">We'll get back to you within 24 hours. No spam, ever.</p>
+        </form>
+    </div>
+</section>
+{% endblock %}

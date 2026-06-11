@@ -1,0 +1,66 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/forms.html" as forms %}
+
+{% block page_title %}System Settings{% endblock %}
+{% block page_subtitle %}Configure global platform settings, API keys, and integrations.{% endblock %}
+
+{% block breadcrumb_current %}
+<a href="{{ url_for('super_admin.dashboard') }}" class="hover:text-slate-900 transition-colors">Super Admin</a>
+<span class="mx-2 text-slate-300">/</span>
+<span class="text-slate-900 font-medium">Settings</span>
+{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Overview',         url_for('super_admin.dashboard'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>') }}
+{{ sidebar_link('Users & Roles',    url_for('super_admin.users'),    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>') }}
+{{ sidebar_link('Agencies',         url_for('super_admin.agencies'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>') }}
+{{ sidebar_link('Audit Log',        url_for('super_admin.audit_log'),'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>') }}
+{{ sidebar_link('Settings',         url_for('super_admin.settings'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z"/>', active=True) }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-3xl">
+    <div class="card p-8">
+        <form action="{{ url_for('super_admin.settings_post') }}" method="POST" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            {{ forms.form_section('Platform Configuration', 'General settings for the Skolaz environment.') }}
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">Maintenance Mode</label>
+                        <p class="text-xs text-slate-500">Temporarily block access for all non-admin users.</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="maintenance_mode" class="sr-only peer" {% if settings.maintenance_mode %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">Allow Public Registration</label>
+                        <p class="text-xs text-slate-500">Permit students to register independently without an agency.</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="allow_public_registration" class="sr-only peer" {% if settings.allow_public_registration %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+            </div>
+
+            {{ forms.form_section('Integrations', 'Configure third-party services.') }}
+            
+            <div class="space-y-5">
+                {{ forms.input('aws_bucket', 'AWS S3 Bucket Name', value=settings.aws_bucket, help_text="Used for document storage.") }}
+                {{ forms.input('sendgrid_key', 'SendGrid API Key', type='password', value=settings.sendgrid_key, help_text="Used for transactional emails.") }}
+            </div>
+
+            <div class="pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
+                {{ forms.submit('Save Settings') }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

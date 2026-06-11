@@ -1,0 +1,215 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Offer #{{ offer.id }}{% endblock %}
+{% block page_subtitle %}{{ offer.offer_type|replace('_',' ')|title }} offer for {{ offer.application.student.full_name if offer.application and offer.application.student else '—' }}{% endblock %}
+
+{% block breadcrumb_current %}
+<a href="{{ url_for('offers.index') }}" class="hover:text-slate-900 transition-colors">Offers</a>
+<span class="mx-2 text-slate-300">/</span>
+<span class="text-slate-900 font-medium">Offer #{{ offer.id }}</span>
+{% endblock %}
+
+{% block page_actions %}
+<div class="flex items-center gap-2">
+    {% if offer.status == 'staff_review' and (current_user.is_staff or current_user.is_super_admin) %}
+    <form method="POST" action="{{ url_for('offers.approve_offer', offer_id=offer.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn-primary text-sm">Approve Offer</button>
+    </form>
+    {% endif %}
+    {% if offer.status == 'manager_approved' %}
+    <form method="POST" action="{{ url_for('offers.notify_student', offer_id=offer.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn-primary text-sm">Notify Student</button>
+    </form>
+    {% endif %}
+    {% if offer.offer_letter_url %}
+    <a href="{{ offer.offer_letter_url }}" target="_blank" class="btn-secondary text-sm">View Letter</a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Offers',       url_for('offers.index'),       '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138z"/>', active=True) }}
+{{ sidebar_link('Applications', url_for('applications.index'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    {# Main offer details #}
+    <div class="lg:col-span-2 space-y-5">
+
+        {# Status timeline #}
+        <div class="card p-6">
+            <h3 class="text-sm font-semibold text-slate-800 mb-5">Approval Chain</h3>
+            <div class="flex items-center gap-0">
+                {% set steps = [
+                    ('Uploaded',         'uploaded',         offer.uploaded_at,          offer.uploader),
+                    ('Staff Review',     'staff_review',     offer.staff_reviewed_at,    offer.reviewer),
+                    ('Manager Approved', 'manager_approved', offer.approved_at,          offer.approver),
+                    ('Student Notified', 'student_notified', offer.student_notified_at,  none),
+                    ('Student Response', 'student_accepted', offer.student_responded_at, none),
+                ] %}
+                {% set statuses = ['uploaded','staff_review','manager_approved','student_notified','student_accepted','student_rejected'] %}
+                {% set current_idx = statuses.index(offer.status) if offer.status in statuses else 0 %}
+                {% for label, key, timestamp, actor in steps %}
+                {% set step_idx = loop.index0 %}
+                {% set done = step_idx < current_idx %}
+                {% set active = step_idx == current_idx %}
+                <div class="flex items-center flex-1 min-w-0">
+                    <div class="flex flex-col items-center min-w-0">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center border-2 flex-shrink-0
+                            {% if done %}bg-brand-600 border-brand-600 text-white
+                            {% elif active %}bg-white border-brand-600 text-brand-600
+                            {% else %}bg-white border-slate-200 text-slate-300{% endif %}">
+                            {% if done %}
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                            {% else %}
+                            <span class="text-xs font-bold">{{ loop.index }}</span>
+                            {% endif %}
+                        </div>
+                        <p class="text-[10px] font-medium mt-1.5 text-center leading-tight max-w-[72px]
+                            {% if done %}text-brand-600{% elif active %}text-slate-800 font-semibold{% else %}text-slate-400{% endif %}">
+                            {{ label }}
+                        </p>
+                        {% if timestamp %}
+                        <p class="text-[10px] text-slate-400 mt-0.5">{{ timestamp|timeago }}</p>
+                        {% endif %}
+                    </div>
+                    {% if not loop.last %}
+                    <div class="flex-1 h-0.5 mx-1 mb-6 {% if done %}bg-brand-600{% else %}bg-slate-200{% endif %}"></div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Offer details #}
+        <div class="card p-6">
+            <h3 class="text-sm font-semibold text-slate-800 mb-4">Offer Details</h3>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                {% for label, value in [
+                    ('Offer Type',      offer.offer_type|replace('_',' ')|title),
+                    ('Status',          offer.status|replace('_',' ')|title),
+                    ('Reference No.',   offer.reference_number or '—'),
+                    ('Offered Program', offer.offered_program or (offer.application.program.name if offer.application and offer.application.program else '—')),
+                    ('Start Date',      offer.offered_start_date.strftime('%d %b %Y') if offer.offered_start_date else '—'),
+                    ('Expiry Date',     offer.offer_expiry_date.strftime('%d %b %Y') if offer.offer_expiry_date else '—'),
+                    ('Tuition Amount',  (offer.currency ~ ' ' ~ offer.tuition_amount|int) if offer.tuition_amount else '—'),
+                    ('Deposit Amount',  (offer.currency ~ ' ' ~ offer.deposit_amount|int) if offer.deposit_amount else '—'),
+                    ('Scholarship',     (offer.currency ~ ' ' ~ offer.scholarship_amount|int) if offer.scholarship_amount else '—'),
+                ] %}
+                <div>
+                    <p class="text-xs text-slate-400">{{ label }}</p>
+                    <p class="font-medium text-slate-800 mt-0.5">{{ value }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Conditions #}
+        {% if conditions %}
+        <div class="card overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100">
+                <h3 class="text-sm font-semibold text-slate-800">Conditions ({{ conditions|length }})</h3>
+            </div>
+            <div class="divide-y divide-slate-50">
+                {% for cond in conditions %}
+                <div class="flex items-start gap-3 px-5 py-3.5">
+                    <div class="mt-0.5 flex-shrink-0">
+                        {% if cond.is_met %}
+                        <div class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                            <svg class="w-3 h-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        {% else %}
+                        <div class="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center">
+                            <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm text-slate-700 {% if cond.is_met %}line-through text-slate-400{% endif %}">{{ cond.condition_text }}</p>
+                        {% if cond.is_met and cond.met_at %}
+                        <p class="text-xs text-green-600 mt-0.5">Met {{ cond.met_at|timeago }} by {{ cond.met_user.full_name if cond.met_user else 'Unknown' }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# Internal notes #}
+        {% if offer.internal_notes %}
+        <div class="card p-5">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3">Internal Notes</h3>
+            <p class="text-sm text-slate-600 whitespace-pre-wrap">{{ offer.internal_notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Right panel #}
+    <div class="space-y-5">
+
+        {# Student card #}
+        {% if offer.application and offer.application.student %}
+        {% set student = offer.application.student %}
+        <div class="card p-5">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Student</h3>
+            <div class="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100">
+                <div class="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center font-bold text-brand-700">{{ student.initials }}</div>
+                <div>
+                    <p class="text-sm font-semibold text-slate-800">{{ student.full_name }}</p>
+                    <a href="{{ url_for('students.detail', student_id=student.id) }}" class="text-xs text-brand-600 hover:text-brand-700">View profile →</a>
+                </div>
+            </div>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between"><span class="text-slate-500">Email</span><span class="font-medium text-slate-800 truncate ml-2">{{ student.email }}</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Phone</span><span class="font-medium text-slate-800">{{ student.phone or '—' }}</span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Nationality</span><span class="font-medium text-slate-800">{{ student.nationality_country.name if student.nationality_country else '—' }}</span></div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Offer files #}
+        <div class="card p-5">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Attachments</h3>
+            {% if offer.offer_letter_url %}
+            <a href="{{ offer.offer_letter_url }}" target="_blank"
+               class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-brand-300 transition-colors group mb-3">
+                <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-800 group-hover:text-brand-600">Offer Letter</p>
+                    <p class="text-xs text-slate-400">Click to open</p>
+                </div>
+                <svg class="w-4 h-4 text-slate-300 group-hover:text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </a>
+            {% else %}
+            <p class="text-sm text-slate-400">No offer letter uploaded.</p>
+            {% endif %}
+        </div>
+
+        {# Actors #}
+        <div class="card p-5">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Team</h3>
+            <div class="space-y-3">
+                {% for role, user in [('Uploaded by', offer.uploader), ('Reviewed by', offer.reviewer), ('Approved by', offer.approver)] %}
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-500 flex-shrink-0">
+                        {{ user.initials if user else '?' }}
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400">{{ role }}</p>
+                        <p class="text-sm font-medium text-slate-700">{{ user.full_name if user else '—' }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "base/dashboard_layout.html" %}
+{% from "macros/data_entry_sidebar.html" import de_sidebar %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Bulk CSV Import{% endblock %}
+{% block page_subtitle %}Upload CSV files to bulk-import countries, states, cities, campuses, schools and programs.{% endblock %}
+
+{% block sidebar_menu %}{{ de_sidebar("csv") }}{% endblock %}
+
+{% block dashboard_content %}
+
+{# ── Instructions banner ──────────────────────────────────────── #}
+<div class="bg-brand-50 border border-brand-200 rounded-xl p-5 mb-6 flex items-start gap-4">
+    <div class="w-9 h-9 rounded-xl bg-brand-100 flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    </div>
+    <div>
+        <p class="text-sm font-semibold text-brand-800 mb-1">How bulk import works</p>
+        <ul class="text-sm text-brand-700 space-y-1 list-disc list-inside">
+            <li>Download the template CSV for the entity you want to import.</li>
+            <li>Fill in the data — the first row (headers) must stay unchanged.</li>
+            <li>Existing records (matched by ISO code / name) are <strong>skipped</strong> — no duplicates.</li>
+            <li>Import order matters: <strong>Countries → States → Cities → Schools → Campuses → Programs</strong>.</li>
+        </ul>
+    </div>
+</div>
+
+{# ── Import cards grid ────────────────────────────────────────── #}
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+    {% set entities = [
+        ('countries',  'Countries',    'globe',       'blue',
+         'Import destination countries with ISO codes, currencies and visa info.',
+         url_for('data_entry.countries')),
+        ('states',     'States',       'map',         'green',
+         'Import states and provinces. Requires countries to exist first.',
+         url_for('data_entry.states')),
+        ('cities',     'Cities',       'location',    'amber',
+         'Import cities. Requires countries (and optionally states) to exist.',
+         url_for('data_entry.cities')),
+        ('schools',    'Institutions', 'school',      'purple',
+         'Import universities and colleges. Countries/cities should exist first.',
+         url_for('data_entry.schools')),
+        ('campuses',   'Campuses',     'building',    'blue',
+         'Import campuses for existing schools. Schools must exist first.',
+         url_for('data_entry.schools')),
+        ('programs',   'Programs',     'book',        'green',
+         'Import degree programs. Schools must exist before importing programs.',
+         url_for('data_entry.programs')),
+    ] %}
+
+    {% for entity, label, icon, color, desc, manage_url in entities %}
+    <div class="card p-6 flex flex-col gap-4">
+        {# Header #}
+        <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl kpi-accent-{{ color }} flex items-center justify-center flex-shrink-0">
+                    {% if icon == 'globe' %}
+                    <svg class="w-5 h-5 text-{{ color }}-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {% elif icon == 'map' %}
+                    <svg class="w-5 h-5 text-{{ color }}-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+                    {% elif icon == 'location' %}
+                    <svg class="w-5 h-5 text-{{ color }}-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    {% elif icon == 'school' %}
+                    <svg class="w-5 h-5 text-{{ color }}-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    {% elif icon == 'building' %}
+                    <svg class="w-5 h-5 text-{{ color }}-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/></svg>
+                    {% else %}
+                    <svg class="w-5 h-5 text-{{ color }}-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    {% endif %}
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-800">{{ label }}</h3>
+                    <a href="{{ manage_url }}" class="text-xs text-brand-600 hover:text-brand-700">View existing →</a>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-xs text-slate-500 leading-relaxed">{{ desc }}</p>
+
+        {# Download template #}
+        <a href="{{ url_for('data_entry.csv_template', entity=entity) }}"
+           class="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-brand-600 transition-colors bg-slate-50 hover:bg-brand-50 border border-slate-200 hover:border-brand-200 rounded-lg px-3 py-2">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Download {{ label }} Template (.csv)
+        </a>
+
+        {# Upload form #}
+        <form method="POST" action="{{ url_for('data_entry.csv_import', entity=entity) }}"
+              enctype="multipart/form-data" x-data="{ file: null, dragging: false }"
+              @dragover.prevent="dragging=true" @dragleave="dragging=false"
+              @drop.prevent="dragging=false; file=$event.dataTransfer.files[0]; $refs.input_{{ entity }}.files=$event.dataTransfer.files">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div :class="dragging ? 'border-brand-400 bg-brand-50' : 'border-slate-200 bg-slate-50 hover:border-brand-300 hover:bg-slate-50'"
+                 class="border-2 border-dashed rounded-xl p-4 text-center transition-colors cursor-pointer"
+                 @click="$refs.input_{{ entity }}.click()">
+                <input type="file" name="csv_file" accept=".csv"
+                       x-ref="input_{{ entity }}"
+                       class="hidden"
+                       @change="file=$event.target.files[0]">
+                <div x-show="!file">
+                    <svg class="w-6 h-6 mx-auto text-slate-400 mb-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <p class="text-xs text-slate-500">Click or drag your CSV here</p>
+                </div>
+                <div x-show="file" x-cloak>
+                    <svg class="w-5 h-5 mx-auto text-green-500 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <p class="text-xs text-slate-700 font-medium" x-text="file ? file.name : ''"></p>
+                    <p class="text-[10px] text-slate-400 mt-0.5" x-text="file ? (file.size/1024).toFixed(1) + ' KB' : ''"></p>
+                </div>
+            </div>
+
+            <button type="submit" :disabled="!file"
+                    class="mt-2.5 btn-primary w-full justify-center text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                    x-bind:disabled="!file">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                Import {{ label }}
+            </button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

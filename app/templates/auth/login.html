@@ -1,0 +1,240 @@
+{% extends "base/base.html" %}
+{% import "macros/forms.html" as forms %}
+
+{% block title %}Sign In — Skolaz{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex">
+
+    <!-- LEFT — Brand Panel -->
+    <div class="hidden lg:flex lg:w-[52%] relative flex-col overflow-hidden bg-navy-900">
+        <div class="absolute inset-0">
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,_rgba(37,99,235,0.35)_0%,_transparent_60%)]"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_80%,_rgba(99,102,241,0.25)_0%,_transparent_55%)]"></div>
+        </div>
+        <div class="absolute inset-0 opacity-[0.04]"
+             style="background-image: linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px); background-size: 40px 40px;"></div>
+        <div class="relative z-10 flex flex-col h-full p-12">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                </div>
+                <span class="text-white font-semibold text-lg tracking-tight">Skolaz</span>
+            </div>
+            <div class="flex-1 flex flex-col justify-center max-w-md">
+                <div class="mb-8">
+                    <span class="inline-flex items-center gap-2 badge badge-blue mb-6 text-blue-300 bg-brand-600/20 border border-brand-500/30">
+                        <span class="status-dot active"></span>
+                        Enterprise Admissions Platform
+                    </span>
+                    <h1 class="text-4xl font-bold text-white leading-tight tracking-tight mb-4">
+                        The modern way to manage global admissions
+                    </h1>
+                    <p class="text-slate-400 text-base leading-relaxed">
+                        Streamline your entire student recruitment pipeline — from first inquiry to enrolment — with intelligent automation.
+                    </p>
+                </div>
+                <div class="space-y-3.5">
+                    {% for title, desc in [
+                        ('14-Stage Application Pipeline', 'Track every student from prospect to enrolled.'),
+                        ('Agency & Partner Network', 'Manage commissions, approvals, and performance.'),
+                        ('Real-Time Collaboration', 'Live updates across your entire team instantly.'),
+                    ] %}
+                    <div class="flex items-start gap-3">
+                        <div class="w-5 h-5 rounded-full bg-brand-600/25 border border-brand-500/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <svg class="w-3 h-3 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-200">{{ title }}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">{{ desc }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="flex items-center gap-6 text-xs text-slate-600">
+                <span>© 2026 Skolaz</span>
+                <a href="#" class="hover:text-slate-400 transition-colors">Privacy</a>
+                <a href="#" class="hover:text-slate-400 transition-colors">Terms</a>
+                <a href="#" class="hover:text-slate-400 transition-colors">Support</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT — Sign-in Form -->
+    <div class="flex-1 flex flex-col items-center justify-center bg-white px-6 py-12 sm:px-12">
+
+        <!-- Mobile logo -->
+        <div class="lg:hidden flex items-center gap-2.5 mb-10">
+            <div class="w-8 h-8 bg-brand-600 rounded-xl flex items-center justify-center">
+                <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+            </div>
+            <span class="text-slate-900 font-semibold text-lg">Skolaz</span>
+        </div>
+
+        <div class="w-full max-w-[360px]" x-data="loginForm()">
+
+            <div class="mb-8">
+                <h2 class="text-[1.625rem] font-bold text-slate-900 tracking-tight">Welcome back</h2>
+                <p class="text-sm text-slate-500 mt-1.5">Sign in to your Skolaz workspace</p>
+            </div>
+
+            <!-- Server-side flash errors -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    {% if category == 'error' or category == 'warning' %}
+                    <div class="mb-5 flex items-start gap-3 p-3.5 bg-red-50 border border-red-200 rounded-xl">
+                        <svg class="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-sm text-red-700">{{ message }}</p>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% endwith %}
+            {% if locked is defined and locked %}
+            <div class="mb-5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl" x-data="lockoutTimer({{ remaining }})">
+                <p class="text-sm font-semibold text-amber-800 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Account temporarily locked
+                </p>
+                <p class="text-xs text-amber-600 mt-1">Try again in <span x-text="timeLeft" class="font-mono font-bold"></span></p>
+            </div>
+            <script>function lockoutTimer(s){return{remaining:s,get timeLeft(){const m=Math.floor(this.remaining/60),sec=this.remaining%60;return m+'m '+String(sec).padStart(2,'0')+'s'},init(){const t=setInterval(()=>{this.remaining--;if(this.remaining<=0){clearInterval(t);window.location.reload();}},1000);}}}</script>
+            {% endif %}
+            <div x-show="errorMsg" x-cloak class="mb-5 flex items-start gap-3 p-3.5 bg-red-50 border border-red-200 rounded-xl">
+                <svg class="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <p class="text-sm text-red-700" x-text="errorMsg"></p>
+            </div>
+
+            <!--
+                Login form uses fetch() + window.location.href to guarantee a FULL page
+                navigation after successful login. This prevents the HTMX partial-swap
+                bug that causes the dashboard to render inside the login page shell.
+            -->
+            <form id="login-form" class="space-y-5" @submit.prevent="submit">
+
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                <div class="space-y-1.5">
+                    <label for="email" class="block text-sm font-medium text-slate-700">Email address</label>
+                    <input type="email" name="email" id="email"
+                           value="{{ email|default('') }}"
+                           placeholder="you@company.com"
+                           required autocomplete="email"
+                           class="input-base h-11">
+                </div>
+
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
+                        <a href="{{ url_for('auth.forgot_password') }}" class="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">Forgot password?</a>
+                    </div>
+                    <div class="relative" x-data="{ show: false }">
+                        <input :type="show ? 'text' : 'password'"
+                               name="password" id="password"
+                               required autocomplete="current-password"
+                               placeholder="••••••••"
+                               class="input-base h-11 pr-10">
+                        <button type="button" @click="show = !show"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                            <svg x-show="!show" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            <svg x-show="show" x-cloak class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center">
+                    <label class="flex items-center gap-2.5 cursor-pointer group">
+                        <input type="checkbox" name="remember" id="remember"
+                               class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 focus:ring-offset-0">
+                        <span class="text-sm text-slate-600 select-none">Remember me for 30 days</span>
+                    </label>
+                </div>
+
+                <button type="submit" :disabled="loading"
+                        class="btn-primary w-full justify-center h-11 text-sm disabled:opacity-70 disabled:cursor-not-allowed">
+                    <svg x-show="loading" x-cloak class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span x-text="loading ? 'Signing in...' : 'Sign in'">Sign in</span>
+                </button>
+            </form>
+
+            <div class="relative my-6">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100"></div></div>
+                <div class="relative flex justify-center"><span class="bg-white px-3 text-xs text-slate-400">or</span></div>
+            </div>
+
+            <div class="space-y-2 text-center">
+                <p class="text-sm text-slate-500">
+                    Partner with us?
+                    <a href="{{ url_for('agency.register') }}" class="font-medium text-brand-600 hover:text-brand-700 transition-colors ml-1">Apply as an Agency →</a>
+                </p>
+                <p class="text-sm text-slate-500">
+                    New student?
+                    <a href="{{ url_for('auth.signup') }}" class="font-medium text-brand-600 hover:text-brand-700 transition-colors ml-1">Create your account →</a>
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-10 flex items-center gap-2 text-xs text-slate-400">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+            <span>Protected by 256-bit SSL encryption</span>
+        </div>
+    </div>
+</div>
+
+<script>
+function loginForm() {
+    return {
+        loading: false,
+        errorMsg: '',
+        async submit(e) {
+            this.loading = true;
+            this.errorMsg = '';
+            try {
+                const form = document.getElementById('login-form');
+                const fd = new FormData(form);
+                // Use fetch with manual redirect so we can capture the final URL
+                const resp = await fetch('{{ url_for("auth.login_post") }}', {
+                    method: 'POST',
+                    body: fd,
+                    redirect: 'follow',
+                    credentials: 'same-origin'
+                });
+                // If the server redirected us, resp.url is the final destination
+                if (resp.redirected || resp.ok) {
+                    window.location.href = resp.url;
+                    return;
+                }
+                // Non-redirect, non-ok = error (401, 403 etc.)
+                const text = await resp.text();
+                // Try to extract flash message from response HTML
+                const match = text.match(/text-red-700[^>]*>([^<]{5,200})</);
+                this.errorMsg = match ? match[1].trim() : 'Invalid email or password. Please try again.';
+            } catch (err) {
+                this.errorMsg = 'Network error. Please check your connection and try again.';
+            }
+            this.loading = false;
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environment
+venv/
+env/
+.venv/
+ENV/
+
+# Environment secrets — NEVER commit
+.env
+*.env
+
+# Database (local dev only)
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads (user files — use S3/R2 in prod)
+uploads/
+
+# Flask / Werkzeug
+*.log
+.flask_env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Alembic compiled
+migrations/__pycache__/
+
+# Temp scripts (dev helpers)
+fix_sidebars.py
+fix_public.py
+validate.py
+add_bulk_buttons.py
+
+# Node (if any tooling added)
+node_modules/

@@ -1,0 +1,24 @@
+{% extends "base/dashboard_layout.html" %}
+
+{% block page_title %}Profile Not Found{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Dashboard', url_for('student_portal.dashboard'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-md mx-auto mt-16 text-center">
+    <div class="w-20 h-20 rounded-2xl bg-amber-50 flex items-center justify-center mx-auto mb-6 border border-amber-100">
+        <svg class="w-10 h-10 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    </div>
+    <h2 class="text-xl font-bold text-slate-900 mb-2">Student profile not found</h2>
+    <p class="text-sm text-slate-500 leading-relaxed mb-6">
+        Your account doesn't have a student profile linked yet. This usually means your profile is being set up by an advisor.
+        If you believe this is an error, please contact support.
+    </p>
+    <div class="flex items-center justify-center gap-3">
+        <a href="mailto:support@skolaz.com" class="btn-primary text-sm">Contact Support</a>
+        <a href="{{ url_for('auth.logout') }}" class="btn-secondary text-sm">Sign Out</a>
+    </div>
+</div>
+{% endblock %}

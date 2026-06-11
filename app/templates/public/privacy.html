@@ -1,0 +1,27 @@
+{% extends "public/_public_base.html" %}
+{% block title %}Privacy Policy — Skolaz{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl mx-auto px-4 sm:px-6 py-16">
+    <h1 class="text-4xl font-bold text-slate-900 mb-2">Privacy Policy</h1>
+    <p class="text-slate-400 text-sm mb-10">Last updated: January 2025</p>
+
+    <div class="prose prose-slate max-w-none space-y-8 text-sm text-slate-600 leading-relaxed">
+        {% for heading, body in [
+            ('1. Information We Collect', 'We collect information you provide directly, such as when you create an account, fill out a form, or contact us. This may include your name, email address, phone number, academic history, and passport details necessary for the admissions process.'),
+            ('2. How We Use Your Information', 'We use the information we collect to process your applications, communicate with institutions on your behalf, send you updates about your application status, and improve our platform. We do not sell your personal data to third parties.'),
+            ('3. Data Sharing', 'We share your information with educational institutions only as necessary to process your application. We may also share data with trusted service providers who assist us in operating our platform, subject to strict confidentiality agreements.'),
+            ('4. Data Security', 'We implement industry-standard security measures including encryption, secure servers, and access controls to protect your personal information. However, no method of transmission over the Internet is 100% secure.'),
+            ('5. Data Retention', 'We retain your personal data for as long as your account is active or as needed to provide you services, comply with legal obligations, resolve disputes, and enforce our agreements.'),
+            ('6. Your Rights', 'Depending on your location, you may have rights to access, correct, delete, or restrict processing of your personal data. To exercise these rights, contact us at privacy@skolaz.com.'),
+            ('7. Cookies', 'We use cookies and similar tracking technologies to improve your experience on our platform. You can control cookie settings through your browser preferences.'),
+            ('8. Contact Us', 'If you have questions about this Privacy Policy, please contact us at privacy@skolaz.com or write to: Skolaz, 123 Education Lane, London, UK.'),
+        ] %}
+        <div>
+            <h2 class="text-base font-semibold text-slate-800 mb-2">{{ heading }}</h2>
+            <p>{{ body }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

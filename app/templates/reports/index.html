@@ -1,0 +1,56 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/stats.html" as s %}
+
+{% block page_title %}Reports{% endblock %}
+{% block page_subtitle %}Platform analytics, pipeline metrics and financial summaries.{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Overview',    url_for('reports.index'),        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>', active=True) }}
+{{ sidebar_link('Funnel',      url_for('reports.student_funnel'),'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>') }}
+{{ sidebar_link('Commissions', url_for('reports.commissions_report'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+
+{# KPIs #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    {{ s.kpi_card('Total Students',   stats.total_students,     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>', 'blue') }}
+    {{ s.kpi_card('Applications',     stats.total_applications, '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>', 'green') }}
+    {{ s.kpi_card('Enrolled',         stats.enrolled,           '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 14l9-5-9-5-9 5 9 5zm0 7l9-5-9-5-9 5 9 5z"/>', 'purple') }}
+    {{ s.kpi_card('Pending Commissions', 'GBP ' ~ stats.pending_commissions|int, '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8"/>', 'amber') }}
+</div>
+
+{# Report cards #}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+    <a href="{{ url_for('reports.student_funnel') }}"
+       class="card p-6 hover:shadow-card-hover transition-shadow group">
+        <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+        </div>
+        <h3 class="text-sm font-semibold text-slate-800 group-hover:text-brand-600 transition-colors">Application Funnel</h3>
+        <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">Pipeline breakdown showing student counts at each stage from Interested to Enrolled.</p>
+        <p class="text-xs font-medium text-brand-600 mt-4">View report →</p>
+    </a>
+
+    <a href="{{ url_for('reports.commissions_report') }}"
+       class="card p-6 hover:shadow-card-hover transition-shadow group">
+        <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <h3 class="text-sm font-semibold text-slate-800 group-hover:text-brand-600 transition-colors">Commission Summary</h3>
+        <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">Agency-by-agency breakdown of expected, received, and outstanding commission payments.</p>
+        <p class="text-xs font-medium text-brand-600 mt-4">View report →</p>
+    </a>
+
+    <a href="{{ url_for('applications.index') }}"
+       class="card p-6 hover:shadow-card-hover transition-shadow group">
+        <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </div>
+        <h3 class="text-sm font-semibold text-slate-800 group-hover:text-brand-600 transition-colors">Applications Pipeline</h3>
+        <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">Full application listing with stage, priority, and assignment filters.</p>
+        <p class="text-xs font-medium text-brand-600 mt-4">View all →</p>
+    </a>
+</div>
+{% endblock %}

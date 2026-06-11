@@ -1,0 +1,77 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/stats.html" as s %}
+
+{% block page_title %}Commission Summary{% endblock %}
+{% block page_subtitle %}Agency-by-agency financial breakdown.{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Overview',    url_for('reports.index'),           '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>') }}
+{{ sidebar_link('Funnel',      url_for('reports.student_funnel'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>') }}
+{{ sidebar_link('Commissions', url_for('reports.commissions_report'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8"/>', active=True) }}
+{% endblock %}
+
+{% block dashboard_content %}
+{% set total_expected  = data|sum(attribute='expected')  %}
+{% set total_received  = data|sum(attribute='received')  %}
+{% set total_outstanding = data|sum(attribute='outstanding') %}
+
+<div class="grid grid-cols-3 gap-4 mb-6">
+    {{ s.kpi_card('Total Expected',    'GBP ' ~ total_expected|int,    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8"/>', 'blue') }}
+    {{ s.kpi_card('Total Received',    'GBP ' ~ total_received|int,    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>', 'green') }}
+    {{ s.kpi_card('Total Outstanding', 'GBP ' ~ total_outstanding|int, '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>', 'amber') }}
+</div>
+
+<div class="table-container">
+    <table class="table-base">
+        <thead>
+            <tr>
+                <th>Agency</th>
+                <th class="text-right">Expected (GBP)</th>
+                <th class="text-right">Received (GBP)</th>
+                <th class="text-right">Outstanding (GBP)</th>
+                <th>Collection Rate</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                <td class="font-semibold text-slate-800">{{ row.agency.name }}</td>
+                <td class="text-right text-slate-700">{{ row.expected|int }}</td>
+                <td class="text-right text-green-700 font-medium">{{ row.received|int }}</td>
+                <td class="text-right {% if row.outstanding > 0 %}text-amber-600 font-semibold{% else %}text-slate-400{% endif %}">{{ row.outstanding|int }}</td>
+                <td>
+                    {% set rate = ((row.received / row.expected * 100)|int) if row.expected > 0 else 0 %}
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 bg-slate-100 rounded-full h-1.5">
+                            <div class="bg-green-500 h-1.5 rounded-full" style="width: {{ rate }}%"></div>
+                        </div>
+                        <span class="text-xs font-medium text-slate-600 w-8">{{ rate }}%</span>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="py-12 text-center text-sm text-slate-400">No data available.</td></tr>
+            {% endfor %}
+        </tbody>
+        {% if data %}
+        <tfoot>
+            <tr class="font-bold bg-slate-50">
+                <td>Totals</td>
+                <td class="text-right">{{ total_expected|int }}</td>
+                <td class="text-right text-green-700">{{ total_received|int }}</td>
+                <td class="text-right text-amber-600">{{ total_outstanding|int }}</td>
+                <td>
+                    {% set overall_rate = ((total_received / total_expected * 100)|int) if total_expected > 0 else 0 %}
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 bg-slate-200 rounded-full h-1.5">
+                            <div class="bg-brand-600 h-1.5 rounded-full" style="width: {{ overall_rate }}%"></div>
+                        </div>
+                        <span class="text-xs font-medium text-slate-700 w-8">{{ overall_rate }}%</span>
+                    </div>
+                </td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+</div>
+{% endblock %}

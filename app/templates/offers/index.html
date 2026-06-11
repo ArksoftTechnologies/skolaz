@@ -1,0 +1,106 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Offers{% endblock %}
+{% block page_subtitle %}All offer letters across the pipeline — conditional, unconditional and scholarship.{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Offers',        url_for('offers.index'),        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>', active=True) }}
+{{ sidebar_link('Applications',  url_for('applications.index'),  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+
+{# Status filter tabs #}
+<div class="flex gap-1.5 mb-6 overflow-x-auto pb-1">
+    <a href="{{ url_for('offers.index') }}"
+       class="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
+              {% if not status %}bg-brand-600 text-white{% else %}bg-white border border-slate-200 text-slate-600 hover:border-slate-300{% endif %}">
+        All
+    </a>
+    {% for s in OfferStatus %}
+    <a href="{{ url_for('offers.index', status=s.value) }}"
+       class="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
+              {% if status == s.value %}bg-brand-600 text-white{% else %}bg-white border border-slate-200 text-slate-600 hover:border-slate-300{% endif %}">
+        {{ s.value|replace('_',' ')|title }}
+    </a>
+    {% endfor %}
+</div>
+
+<div class="table-container">
+    <table class="table-base">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Institution / Program</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Tuition</th>
+                <th>Expiry</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for offer in paginator.items %}
+            <tr>
+                <td>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-700 flex-shrink-0">
+                            {{ offer.application.student.initials if offer.application and offer.application.student else '?' }}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800 truncate">
+                                {{ offer.application.student.full_name if offer.application and offer.application.student else '—' }}
+                            </p>
+                            <p class="text-xs text-slate-400 font-mono">{{ offer.application.reference if offer.application else '' }}</p>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <p class="text-sm text-slate-800 font-medium truncate max-w-[180px]">
+                        {{ offer.application.program.school.name if offer.application and offer.application.program and offer.application.program.school else '—' }}
+                    </p>
+                    <p class="text-xs text-slate-400 truncate max-w-[180px]">{{ offer.offered_program or (offer.application.program.name if offer.application and offer.application.program else '') }}</p>
+                </td>
+                <td><span class="badge badge-blue">{{ offer.offer_type|replace('_',' ')|title }}</span></td>
+                <td>{{ badges.status_badge(offer.status) }}</td>
+                <td class="text-sm font-medium text-slate-800">
+                    {% if offer.tuition_amount %}{{ offer.currency }} {{ offer.tuition_amount|int }}{% else %}—{% endif %}
+                </td>
+                <td class="text-sm text-slate-600">
+                    {% if offer.offer_expiry_date %}
+                    <span class="{% if offer.offer_expiry_date < now().date() %}text-red-500 font-medium{% endif %}">
+                        {{ offer.offer_expiry_date.strftime('%d %b %Y') }}
+                    </span>
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('offers.detail', offer_id=offer.id) }}" class="btn-secondary text-xs py-1 px-2.5">View</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="py-16 text-center">
+                    <svg class="w-10 h-10 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138z"/></svg>
+                    <p class="text-sm text-slate-400">No offers found.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if paginator.pages > 1 %}
+<div class="flex items-center justify-between mt-5">
+    <p class="text-sm text-slate-500">{{ paginator.total }} offers</p>
+    <div class="flex items-center gap-1">
+        {% if paginator.has_prev %}<a href="?page={{ paginator.prev_num }}&status={{ status }}" class="btn-secondary text-xs px-3 py-1.5">← Prev</a>{% endif %}
+        {% for p in paginator.iter_pages() %}
+            {% if p %}<a href="?page={{ p }}&status={{ status }}" class="w-8 h-8 flex items-center justify-center rounded-lg text-sm {% if p == paginator.page %}bg-brand-600 text-white{% else %}bg-white border border-slate-200 text-slate-600{% endif %}">{{ p }}</a>
+            {% else %}<span class="px-1 text-slate-400">…</span>{% endif %}
+        {% endfor %}
+        {% if paginator.has_next %}<a href="?page={{ paginator.next_num }}&status={{ status }}" class="btn-secondary text-xs px-3 py-1.5">Next →</a>{% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

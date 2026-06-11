@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Skolaz — International Student Admissions{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50:'#eef4ff',100:'#e0ebfe',500:'#1460e4',600:'#0D4CB6',700:'#0b3e94' },
+                        navy:  { 800:'#1e2d4a',900:'#0F172A',950:'#070d1a' },
+                    },
+                    fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .btn-nav { display:inline-flex; align-items:center; gap:.5rem; padding:.5rem 1.25rem; border-radius:.5rem; font-size:.875rem; font-weight:500; transition:all .15s; }
+        .btn-cta { background:#0D4CB6; color:#fff; border-radius:.5rem; padding:.625rem 1.5rem; font-size:.875rem; font-weight:600; display:inline-flex; align-items:center; gap:.5rem; transition:background .15s; }
+        .btn-cta:hover { background:#0b3e94; }
+        .card-pub { background:#fff; border:1px solid #e2e8f0; border-radius:.875rem; overflow:hidden; transition:box-shadow .15s; }
+        .card-pub:hover { box-shadow:0 8px 24px 0 rgb(0 0 0 / 0.08); }
+    </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-50 text-slate-900" x-data="{}">
+
+{# Flash messages #}
+<div class="fixed top-4 right-4 z-50 w-80 space-y-2">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat, msg in messages %}
+    <div x-data="{show:true}" x-show="show" x-init="setTimeout(()=>show=false,4000)"
+         class="flex items-start gap-3 bg-white border rounded-xl p-4 shadow-lg
+                {% if cat=='success' %}border-green-200{% elif cat=='error' %}border-red-200{% else %}border-blue-200{% endif %}">
+        <p class="text-sm text-slate-700 flex-1">{{ msg }}</p>
+        <button @click="show=false" class="text-slate-400 hover:text-slate-600 flex-shrink-0">✕</button>
+    </div>
+    {% endfor %}{% endif %}
+    {% endwith %}
+</div>
+
+{# ── Navbar ── #}
+<nav class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200" x-data="{open:false}">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <a href="{{ url_for('public.home') }}" class="flex items-center gap-2.5">
+                <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
+                    <svg class="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                </div>
+                <span class="font-bold text-lg text-slate-900 tracking-tight">Skolaz</span>
+            </a>
+            <div class="hidden md:flex items-center gap-1">
+                <a href="{{ url_for('public.destinations') }}" class="btn-nav text-slate-600 hover:text-slate-900 hover:bg-slate-50">Destinations</a>
+                <a href="{{ url_for('public.schools') }}"      class="btn-nav text-slate-600 hover:text-slate-900 hover:bg-slate-50">Schools</a>
+                <a href="{{ url_for('public.programs') }}"     class="btn-nav text-slate-600 hover:text-slate-900 hover:bg-slate-50">Programs</a>
+                <a href="{{ url_for('public.scholarships') }}" class="btn-nav text-slate-600 hover:text-slate-900 hover:bg-slate-50">Scholarships</a>
+                <a href="{{ url_for('public.blog') }}"         class="btn-nav text-slate-600 hover:text-slate-900 hover:bg-slate-50">Blog</a>
+            </div>
+            <div class="hidden md:flex items-center gap-2">
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('student_portal.dashboard') }}" class="btn-nav text-slate-600 hover:bg-slate-50">My Portal</a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}"  class="btn-nav text-slate-600 hover:bg-slate-50">Sign In</a>
+                <a href="{{ url_for('auth.signup') }}" class="btn-cta">Get Started</a>
+                {% endif %}
+            </div>
+            <button @click="open=!open" class="md:hidden p-2 text-slate-500">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+        </div>
+    </div>
+    {# Mobile menu #}
+    <div x-show="open" x-cloak class="md:hidden border-t border-slate-100 bg-white px-4 py-3 space-y-1">
+        {% for label, route in [('Destinations','public.destinations'),('Schools','public.schools'),('Programs','public.programs'),('Scholarships','public.scholarships')] %}
+        <a href="{{ url_for(route) }}" class="block py-2 text-sm text-slate-600 hover:text-slate-900">{{ label }}</a>
+        {% endfor %}
+        <div class="pt-2 border-t border-slate-100 flex gap-2">
+            <a href="{{ url_for('auth.login') }}"  class="flex-1 text-center py-2 text-sm border border-slate-200 rounded-lg text-slate-700">Sign In</a>
+            <a href="{{ url_for('auth.signup') }}" class="flex-1 text-center py-2 text-sm bg-brand-600 text-white rounded-lg font-medium">Get Started</a>
+        </div>
+    </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+{# ── Footer ── #}
+<footer class="bg-slate-900 text-slate-400 py-12 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+            <div class="col-span-2 md:col-span-1">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-7 h-7 bg-brand-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    </div>
+                    <span class="text-white font-bold">Skolaz</span>
+                </div>
+                <p class="text-sm leading-relaxed">Enterprise platform for international student admissions management.</p>
+            </div>
+            {% for heading, links in [
+                ('Platform', [('Schools','public.schools'),('Programs','public.programs'),('Scholarships','public.scholarships'),('Destinations','public.destinations')]),
+                ('Company',  [('About','public.about'),('Blog','public.blog'),('Contact','public.contact'),('Consultation','public.consultation')]),
+                ('Legal',    [('Privacy Policy','public.privacy'),('Terms of Service','public.terms')]),
+            ] %}
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">{{ heading }}</p>
+                <ul class="space-y-2">
+                    {% for label, route in links %}
+                    <li><a href="{{ url_for(route) }}" class="text-sm hover:text-white transition-colors">{{ label }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="border-t border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p class="text-xs">© {{ current_year() }} Skolaz. All rights reserved.</p>
+            <p class="text-xs">Built with care for students worldwide.</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

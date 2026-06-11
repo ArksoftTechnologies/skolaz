@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skolaz — Discover Global Education</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50:'#eef4ff',100:'#e0ebfe',500:'#1460e4',600:'#0D4CB6',700:'#0b3e94' },
+                        navy:  { 800:'#1e2d4a',900:'#0F172A',950:'#070d1a' },
+                    },
+                    fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+        .hero-bg {
+            background-color: #0F172A;
+            background-image:
+                radial-gradient(at 70% 10%, hsla(222,86%,54%,0.25) 0px, transparent 55%),
+                radial-gradient(at 10% 90%, hsla(242,86%,60%,0.18) 0px, transparent 55%);
+        }
+        .grid-overlay {
+            background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+            background-size: 44px 44px;
+        }
+        .search-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); backdrop-filter:blur(12px); }
+        .gradient-text {
+            background: linear-gradient(135deg,#ffffff 0%,#93c5fd 60%,#818cf8 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .school-card { background:#fff; border:1px solid #e2e8f0; border-radius:1rem; overflow:hidden; transition:box-shadow .2s,transform .2s; }
+        .school-card:hover { box-shadow:0 12px 32px 0 rgb(0 0 0/.10); transform:translateY(-2px); }
+        .country-pill { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:99px; transition:all .15s; cursor:pointer; }
+        .country-pill:hover { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.25); }
+        .input-pub { width:100%; padding:.625rem 1rem; border-radius:.625rem; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.08); color:#fff; font-size:.875rem; outline:none; transition:border-color .15s,background .15s; }
+        .input-pub::placeholder { color:rgba(255,255,255,.4); }
+        .input-pub:focus { border-color:rgba(99,179,237,.6); background:rgba(255,255,255,.12); }
+        .select-pub { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.5)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .75rem center; background-size:1rem; padding-right:2.5rem; }
+    </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body class="bg-slate-50 text-slate-900" x-data="{}">
+
+{# Flash messages #}
+<div class="fixed top-4 right-4 z-50 w-80 space-y-2">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div x-data="{show:true}" x-show="show" x-init="setTimeout(()=>show=false,4500)"
+         class="flex items-start gap-3 bg-white border rounded-xl p-4 shadow-lg border-brand-200">
+        <p class="text-sm text-slate-700 flex-1">{{ msg }}</p>
+        <button @click="show=false" class="text-slate-400">✕</button>
+    </div>
+    {% endfor %}
+    {% endwith %}
+</div>
+
+{# ══ NAVBAR ══════════════════════════════════════════════════════ #}
+<nav class="hero-bg sticky top-0 z-40 border-b border-white/8" x-data="{open:false}">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <a href="{{ url_for('public.home') }}" class="flex items-center gap-2.5">
+                <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center shadow-lg shadow-brand-600/30">
+                    <svg class="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                </div>
+                <span class="font-bold text-white text-lg tracking-tight">Skolaz</span>
+            </a>
+            <div class="hidden md:flex items-center gap-6 text-sm font-medium">
+                <a href="{{ url_for('public.programs') }}"     class="text-slate-300 hover:text-white transition-colors">Programs</a>
+                <a href="{{ url_for('public.schools') }}"      class="text-slate-300 hover:text-white transition-colors">Schools</a>
+                <a href="{{ url_for('public.destinations') }}" class="text-slate-300 hover:text-white transition-colors">Destinations</a>
+                <a href="{{ url_for('public.scholarships') }}" class="text-slate-300 hover:text-white transition-colors">Scholarships</a>
+                <a href="{{ url_for('public.about') }}"        class="text-slate-300 hover:text-white transition-colors">About</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ url_for('agency.register') }}" class="hidden sm:block text-sm font-medium text-slate-300 hover:text-white transition-colors">Partner with us</a>
+                <a href="{{ url_for('auth.login') }}"  class="text-sm text-slate-300 hover:text-white font-medium hidden sm:block">Sign in</a>
+                <a href="{{ url_for('auth.signup') }}" class="px-4 py-2 bg-brand-600 text-white text-sm font-semibold rounded-lg hover:bg-brand-500 transition-colors shadow-sm shadow-brand-600/30">
+                    Get Started
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+{# ══ HERO ════════════════════════════════════════════════════════ #}
+<section class="hero-bg relative overflow-hidden">
+    <div class="absolute inset-0 grid-overlay z-0"></div>
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-12 text-center">
+
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-600/15 border border-brand-500/20 text-brand-300 text-xs font-semibold mb-6">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span>
+            {{ stats.programs }}+ programs from {{ stats.countries }} countries
+        </div>
+
+        <h1 class="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.08] tracking-tight mb-5">
+            Find Your Perfect<br class="hidden sm:block"/>
+            <span class="gradient-text">Study Abroad</span> Program
+        </h1>
+        <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Search {{ stats.programs }}+ programs at {{ stats.schools }}+ institutions across {{ stats.countries }} countries.
+            Filterable by destination, school, level, budget, and more.
+        </p>
+
+        {# ── SMART SEARCH CARD ─────────────────────────────────── #}
+        <div class="search-card rounded-2xl p-5 max-w-4xl mx-auto text-left"
+             x-data="{
+                country_id: '',
+                state_id:   '',
+                city_id:    '',
+                school_id:  '',
+             }">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+
+                {# Keyword #}
+                <div class="sm:col-span-2 lg:col-span-4">
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Search programs or schools</label>
+                    <div class="relative">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                        <input type="text" id="hero-search" placeholder="e.g. Computer Science, MBA, Nursing…"
+                               class="input-pub pl-10"
+                               hx-get="{{ url_for('public.search') }}"
+                               hx-target="#search-suggestions"
+                               hx-trigger="keyup changed delay:300ms"
+                               name="q">
+                    </div>
+                    <div id="search-suggestions" class="relative"></div>
+                </div>
+
+                {# Country #}
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Country</label>
+                    <select id="hero-country" x-model="country_id"
+                            class="input-pub select-pub"
+                            hx-get="{{ url_for('public.api_states') }}"
+                            hx-target="#hero-state-sel"
+                            hx-trigger="change"
+                            hx-include="this"
+                            name="country_id">
+                        <option value="">All Countries</option>
+                        {% for c in countries %}
+                        <option value="{{ c.id }}">{{ c.flag_emoji or '' }} {{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {# State #}
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">State / Province</label>
+                    <select id="hero-state-sel" x-model="state_id"
+                            class="input-pub select-pub"
+                            hx-get="{{ url_for('public.api_cities') }}"
+                            hx-target="#hero-city-sel"
+                            hx-trigger="change"
+                            hx-include="[name='country_id']"
+                            name="state_id">
+                        <option value="">All States</option>
+                    </select>
+                </div>
+
+                {# City #}
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">City</label>
+                    <select id="hero-city-sel" x-model="city_id"
+                            class="input-pub select-pub"
+                            hx-get="{{ url_for('public.api_schools_in') }}"
+                            hx-target="#hero-school-sel"
+                            hx-trigger="change"
+                            hx-include="[name='country_id'],[name='state_id']"
+                            name="city_id">
+                        <option value="">All Cities</option>
+                    </select>
+                </div>
+
+                {# School #}
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Institution</label>
+                    <select id="hero-school-sel" x-model="school_id"
+                            class="input-pub select-pub"
+                            name="school_id">
+                        <option value="">All Institutions</option>
+                    </select>
+                </div>
+            </div>
+
+            {# Level + Fee row #}
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Study Level</label>
+                    <select class="input-pub select-pub" name="level" id="hero-level">
+                        <option value="">All Levels</option>
+                        {% for v, l in [('certificate','Certificate'),('diploma','Diploma'),('bachelor','Bachelor'),('postgraduate','Postgraduate'),('master','Master'),('doctorate','Doctorate'),('language','Language'),('foundation','Foundation')] %}
+                        <option value="{{ v }}">{{ l }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Study Mode</label>
+                    <select class="input-pub select-pub" id="hero-mode">
+                        <option value="">Any Mode</option>
+                        <option value="full-time">Full-time</option>
+                        <option value="part-time">Part-time</option>
+                        <option value="online">Online</option>
+                        <option value="blended">Blended</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Min Tuition</label>
+                    <input type="number" class="input-pub" placeholder="e.g. 5000" id="hero-min-fee" min="0" step="500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Max Tuition</label>
+                    <input type="number" class="input-pub" placeholder="e.g. 30000" id="hero-max-fee" min="0" step="500">
+                </div>
+            </div>
+
+            {# Search button #}
+            <div class="flex items-center justify-between gap-3">
+                <p class="text-xs text-slate-500">{{ stats.programs }}+ programs available</p>
+                <button onclick="doSearch()" class="px-6 py-2.5 bg-brand-600 text-white text-sm font-semibold rounded-xl hover:bg-brand-500 transition-colors shadow-md shadow-brand-600/30 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                    Search Programs
+                </button>
+            </div>
+        </div>
+
+        {# Stats strip #}
+        <div class="flex items-center justify-center gap-8 mt-10 text-sm text-slate-400">
+            {% for value, label in [
+                (stats.programs|string ~ '+', 'Programs'),
+                (stats.schools|string ~ '+', 'Institutions'),
+                (stats.countries|string ~ '+', 'Countries'),
+                ('100%', 'Free to Apply'),
+            ] %}
+            <div class="text-center">
+                <p class="text-xl font-bold text-white">{{ value }}</p>
+                <p class="text-xs mt-0.5">{{ label }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{# ══ FEATURED COUNTRIES ══════════════════════════════════════════ #}
+{% if featured_countries %}
+<section class="hero-bg border-b border-white/8 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-4 overflow-x-auto pb-1 scrollbar-none">
+            <span class="text-xs text-slate-500 font-medium whitespace-nowrap flex-shrink-0">Popular destinations:</span>
+            {% for country in featured_countries %}
+            <a href="{{ url_for('public.programs', country_id=country.id) }}"
+               class="country-pill flex items-center gap-2 px-4 py-2 whitespace-nowrap flex-shrink-0">
+                <span class="text-lg">{{ country.flag_emoji or '🌍' }}</span>
+                <span class="text-sm font-medium text-white">{{ country.name }}</span>
+                <span class="text-xs text-slate-400">{{ country.schools.count() }} schools</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ══ FEATURED SCHOOLS ════════════════════════════════════════════ #}
+{% if featured_schools %}
+<section class="bg-white py-16 border-b border-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-end justify-between mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900">Featured Institutions</h2>
+                <p class="text-slate-500 mt-1">Hand-picked partner schools trusted by thousands of students</p>
+            </div>
+            <a href="{{ url_for('public.schools') }}" class="text-sm font-semibold text-brand-600 hover:text-brand-700 hidden sm:block">View all schools →</a>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {% for school in featured_schools %}
+            <a href="{{ url_for('public.school_detail', school_id=school.id) }}" class="school-card group">
+                <div class="h-40 overflow-hidden relative">
+                    {% if school.cover_image_url %}
+                    <img src="{{ school.cover_image_url }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ school.name }}">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                    {% else %}
+                    <div class="h-full bg-gradient-to-br from-brand-600 to-brand-800 flex items-center justify-center">
+                        <svg class="w-12 h-12 text-white/30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>
+                    </div>
+                    {% endif %}
+                    {% if school.is_partner %}
+                    <div class="absolute top-3 right-3 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Partner</div>
+                    {% endif %}
+                </div>
+                <div class="p-5">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0 overflow-hidden -mt-8 shadow-sm">
+                            {% if school.logo_url %}
+                            <img src="{{ school.logo_url }}" class="w-full h-full object-contain p-1" alt="">
+                            {% else %}
+                            <span class="text-lg font-bold text-slate-400">{{ school.name[0] }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-semibold text-slate-900 leading-tight group-hover:text-brand-600 transition-colors truncate">{{ school.name }}</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">
+                                {{ school.country.flag_emoji if school.country else '' }}
+                                {{ school.city.name if school.city else '' }}{% if school.city %}, {% endif %}{{ school.country.name if school.country else '—' }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 mt-4 text-xs text-slate-500">
+                        {% if school.ranking %}<span>🏆 #{{ school.ranking }}</span>{% endif %}
+                        <span>{{ school.programs.filter_by(status='active').count() }} programs</span>
+                        {% if school.tuition_min %}
+                        <span>From {{ school.currency }} {{ school.tuition_min|int }}/yr</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-8 sm:hidden">
+            <a href="{{ url_for('public.schools') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-700">
+                View all schools →
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{# ══ HOW IT WORKS ════════════════════════════════════════════════ #}
+<section class="bg-slate-50 py-16 border-b border-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-10">
+            <h2 class="text-2xl font-bold text-slate-900">Your path to studying abroad, simplified</h2>
+            <p class="text-slate-500 mt-2">We guide you from discovery to enrollment — step by step.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {% for step, title, desc, icon in [
+                ('01', 'Search', 'Filter thousands of programs by country, level, budget, and more.', 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0'),
+                ('02', 'Compare', 'Compare schools side by side — ranking, fees, requirements, intakes.', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'),
+                ('03', 'Apply',   'Submit your application through our guided process with advisor support.', 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'),
+                ('04', 'Enroll', 'Accept your offer, complete visa steps, and get ready to fly.', 'M12 14l9-5-9-5-9 5 9 5zm0 7l9-5-9-5-9 5 9 5z'),
+            ] %}
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 relative">
+                <div class="absolute -top-3 -left-1">
+                    <span class="text-4xl font-black text-slate-100">{{ step }}</span>
+                </div>
+                <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center mb-4">
+                    <svg class="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ icon }}"/></svg>
+                </div>
+                <h3 class="font-semibold text-slate-900 mb-1.5">{{ title }}</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">{{ desc }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{# ══ CTA STRIP ════════════════════════════════════════════════════ #}
+<section class="hero-bg py-16 relative overflow-hidden">
+    <div class="absolute inset-0 grid-overlay z-0"></div>
+    <div class="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 text-center">
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Ready to start your journey?</h2>
+        <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+            Create a free account, tell us your goals, and our advisors will help you find the perfect program.
+        </p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a href="{{ url_for('auth.signup') }}"
+               class="w-full sm:w-auto px-8 py-3.5 bg-brand-600 text-white text-sm font-semibold rounded-xl hover:bg-brand-500 transition-colors shadow-lg shadow-brand-600/30 flex items-center justify-center gap-2">
+                Create Free Account
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </a>
+            <a href="{{ url_for('public.consultation') }}"
+               class="w-full sm:w-auto px-8 py-3.5 bg-white/8 text-white border border-white/15 text-sm font-semibold rounded-xl hover:bg-white/12 transition-colors">
+                Book Free Consultation
+            </a>
+        </div>
+    </div>
+</section>
+
+{# ══ FOOTER ═══════════════════════════════════════════════════════ #}
+<footer class="bg-slate-900 text-slate-400 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+            <div class="col-span-2 md:col-span-1">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-7 h-7 bg-brand-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    </div>
+                    <span class="text-white font-bold">Skolaz</span>
+                </div>
+                <p class="text-sm leading-relaxed">Enterprise platform for international student admissions management.</p>
+            </div>
+            {% for heading, links in [
+                ('Explore',  [('Programs','public.programs'),('Schools','public.schools'),('Scholarships','public.scholarships'),('Destinations','public.destinations')]),
+                ('Company',  [('About','public.about'),('Blog','public.blog'),('Contact','public.contact'),('Consultation','public.consultation')]),
+                ('Legal',    [('Privacy Policy','public.privacy'),('Terms of Service','public.terms')]),
+            ] %}
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">{{ heading }}</p>
+                <ul class="space-y-2">
+                    {% for label, route in links %}
+                    <li><a href="{{ url_for(route) }}" class="text-sm hover:text-white transition-colors">{{ label }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="border-t border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p class="text-xs">© {{ current_year() }} Skolaz. All rights reserved.</p>
+            <div class="flex items-center gap-4 text-xs">
+                <a href="{{ url_for('auth.login') }}" class="hover:text-white">Admin Login</a>
+                <a href="{{ url_for('agency.register') }}" class="hover:text-white">Become a Partner</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+function doSearch() {
+    const q        = document.getElementById('hero-search').value;
+    const country  = document.getElementById('hero-country').value;
+    const state    = document.getElementById('hero-state-sel').value;
+    const city     = document.getElementById('hero-city-sel').value;
+    const school   = document.getElementById('hero-school-sel').value;
+    const level    = document.getElementById('hero-level').value;
+    const minFee   = document.getElementById('hero-min-fee').value;
+    const maxFee   = document.getElementById('hero-max-fee').value;
+
+    const params = new URLSearchParams();
+    if (q)          params.set('q',          q);
+    if (country)    params.set('country_id',  country);
+    if (state)      params.set('state_id',    state);
+    if (city)       params.set('city_id',     city);
+    if (school)     params.set('school_id',   school);
+    if (level)      params.set('level',       level);
+    if (minFee)     params.set('min_fee',     minFee);
+    if (maxFee)     params.set('max_fee',     maxFee);
+
+    window.location.href = '{{ url_for("public.programs") }}?' + params.toString();
+}
+
+// Allow Enter key to trigger search
+document.getElementById('hero-search').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doSearch();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+{% import "macros/stats.html" as s %}
+
+{% block page_title %}Commissions{% endblock %}
+{% block page_subtitle %}Agency commission tracking — expected, received, and outstanding.{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Commissions', url_for('commissions.index'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>', active=True) }}
+{{ sidebar_link('Reports',     url_for('reports.index'),     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+
+{# Summary KPIs #}
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    {{ s.kpi_card('Total Expected', 'GBP ' ~ (totals.expected|float|int if totals.expected else 0)|string,
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+        'blue') }}
+    {{ s.kpi_card('Total Received', 'GBP ' ~ (totals.received|float|int if totals.received else 0)|string,
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+        'green') }}
+    {{ s.kpi_card('Outstanding', 'GBP ' ~ ((totals.expected|float - totals.received|float)|int if totals.expected else 0)|string,
+        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+        'amber') }}
+</div>
+
+{# Filters #}
+<div class="card p-4 mb-5">
+    <form method="GET" class="flex flex-wrap gap-3 items-end">
+        <div class="w-44">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Agency</label>
+            <select name="agency_id" class="input-base">
+                <option value="">All Agencies</option>
+                {% for ag in agencies %}
+                <option value="{{ ag.id }}" {% if agency == ag.id|string %}selected{% endif %}>{{ ag.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="w-36">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Status</label>
+            <select name="status" class="input-base">
+                <option value="">All</option>
+                {% for cs in CommissionStatus %}
+                <option value="{{ cs.value }}" {% if status == cs.value %}selected{% endif %}>{{ cs.value|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn-primary">Filter</button>
+        {% if agency or status %}<a href="{{ url_for('commissions.index') }}" class="btn-secondary">Clear</a>{% endif %}
+    </form>
+</div>
+
+<div class="table-container">
+    <table class="table-base">
+        <thead>
+            <tr>
+                <th>Agency</th>
+                <th>Student / Application</th>
+                <th>Expected</th>
+                <th>Received</th>
+                <th>Outstanding</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for comm in paginator.items %}
+            <tr>
+                <td>
+                    <p class="text-sm font-semibold text-slate-800">{{ comm.agency.name if comm.agency else '—' }}</p>
+                </td>
+                <td>
+                    {% if comm.application and comm.application.student %}
+                    <a href="{{ url_for('students.detail', student_id=comm.application.student.id) }}" class="text-sm font-medium text-brand-600 hover:text-brand-700">
+                        {{ comm.application.student.full_name }}
+                    </a>
+                    <p class="text-xs text-slate-400 font-mono">{{ comm.application.reference }}</p>
+                    {% else %}—{% endif %}
+                </td>
+                <td class="text-sm font-semibold text-slate-800">
+                    {{ comm.currency }} {{ comm.expected_amount|float|int if comm.expected_amount else '—' }}
+                </td>
+                <td class="text-sm text-green-700 font-medium">
+                    {{ comm.currency }} {{ comm.received_amount|float|int if comm.received_amount else '0' }}
+                </td>
+                <td class="text-sm font-semibold {% if comm.outstanding_amount > 0 %}text-amber-600{% else %}text-slate-400{% endif %}">
+                    {{ comm.currency }} {{ comm.outstanding_amount|int }}
+                </td>
+                <td>{{ badges.status_badge(comm.status) }}</td>
+                <td>
+                    {% if comm.status not in ['paid','cancelled'] %}
+                    <div x-data="{ open: false }" class="relative">
+                        <button @click="open = !open" class="btn-secondary text-xs py-1 px-2.5">Record Payment</button>
+                        <div x-show="open" @click.away="open = false" x-cloak
+                             class="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-dropdown z-50 p-4">
+                            <form method="POST" action="{{ url_for('commissions.record_payment', commission_id=comm.id) }}" class="space-y-3">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div>
+                                    <label class="text-xs font-medium text-slate-600 block mb-1">Amount ({{ comm.currency }})</label>
+                                    <input type="number" name="amount" step="0.01" min="0" placeholder="0.00"
+                                           class="input-base text-sm">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-slate-600 block mb-1">Reference</label>
+                                    <input type="text" name="reference" placeholder="Bank ref..."
+                                           class="input-base text-sm">
+                                </div>
+                                <button type="submit" class="btn-primary w-full justify-center text-sm">Save</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="py-16 text-center">
+                    <svg class="w-10 h-10 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8m0 0v1"/></svg>
+                    <p class="text-sm text-slate-400">No commissions found.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if paginator.pages > 1 %}
+<div class="flex items-center justify-between mt-5">
+    <p class="text-sm text-slate-500">{{ paginator.total }} records</p>
+    <div class="flex items-center gap-1">
+        {% if paginator.has_prev %}<a href="?page={{ paginator.prev_num }}&status={{ status }}&agency_id={{ agency }}" class="btn-secondary text-xs px-3 py-1.5">← Prev</a>{% endif %}
+        {% for p in paginator.iter_pages() %}
+            {% if p %}<a href="?page={{ p }}&status={{ status }}&agency_id={{ agency }}" class="w-8 h-8 flex items-center justify-center rounded-lg text-sm {% if p == paginator.page %}bg-brand-600 text-white{% else %}bg-white border border-slate-200 text-slate-600{% endif %}">{{ p }}</a>
+            {% else %}<span class="px-1 text-slate-400">…</span>{% endif %}
+        {% endfor %}
+        {% if paginator.has_next %}<a href="?page={{ paginator.next_num }}&status={{ status }}&agency_id={{ agency }}" class="btn-secondary text-xs px-3 py-1.5">Next →</a>{% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

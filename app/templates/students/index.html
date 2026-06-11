@@ -1,0 +1,132 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Students{% endblock %}
+{% block page_subtitle %}All registered students across the platform.{% endblock %}
+
+{% block topbar_action %}
+<a href="{{ url_for('students.create') }}" class="btn-primary text-sm">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Add Student
+</a>
+{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Students',     url_for('students.index'),     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>', active=True) }}
+{{ sidebar_link('Applications', url_for('applications.index'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+{# Filters #}
+<div class="card p-4 mb-6">
+    <form method="GET" class="flex flex-wrap gap-3 items-end">
+        <div class="flex-1 min-w-[200px]">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Search</label>
+            <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                <input type="text" name="q" value="{{ q }}" placeholder="Name or email..." class="input-base pl-9">
+            </div>
+        </div>
+        <div class="w-40">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Source</label>
+            <select name="source" class="input-base">
+                <option value="">All Sources</option>
+                <option value="direct"      {% if source=='direct' %}selected{% endif %}>Direct</option>
+                <option value="agency"      {% if source=='agency' %}selected{% endif %}>Agency</option>
+                <option value="referral"    {% if source=='referral' %}selected{% endif %}>Referral</option>
+                <option value="website"     {% if source=='website' %}selected{% endif %}>Website</option>
+                <option value="social_media"{% if source=='social_media' %}selected{% endif %}>Social Media</option>
+                <option value="walk_in"     {% if source=='walk_in' %}selected{% endif %}>Walk-in</option>
+            </select>
+        </div>
+        {% if advisors %}
+        <div class="w-44">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Advisor</label>
+            <select name="advisor_id" class="input-base">
+                <option value="">All Advisors</option>
+                {% for adv in advisors %}
+                <option value="{{ adv.id }}" {% if advisor == adv.id|string %}selected{% endif %}>{{ adv.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        <button type="submit" class="btn-primary">Filter</button>
+        {% if q or source or advisor %}
+        <a href="{{ url_for('students.index') }}" class="btn-secondary">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="table-container">
+    <table class="table-base">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Contact</th>
+                <th>Nationality</th>
+                <th>Source</th>
+                <th>Advisor</th>
+                <th>Created</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in paginator.items %}
+            <tr>
+                <td>
+                    <div class="flex items-center gap-2.5">
+                        {% if student.avatar_url %}
+                        <img src="{{ student.avatar_url }}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" alt="">
+                        {% else %}
+                        <div class="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-700 flex-shrink-0">
+                            {{ student.initials }}
+                        </div>
+                        {% endif %}
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800 truncate">{{ student.full_name }}</p>
+                            <p class="text-xs text-slate-400 font-mono truncate">{{ student.email }}</p>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <p class="text-sm text-slate-700">{{ student.phone or '—' }}</p>
+                    {% if student.whatsapp %}<p class="text-xs text-green-600">WA: {{ student.whatsapp }}</p>{% endif %}
+                </td>
+                <td class="text-sm text-slate-600">{{ student.nationality_country.name if student.nationality_country else '—' }}</td>
+                <td><span class="badge badge-slate">{{ student.source|replace('_',' ')|title }}</span></td>
+                <td class="text-sm text-slate-600">{{ student.primary_advisor.full_name if student.primary_advisor else '—' }}</td>
+                <td class="text-xs text-slate-400">{{ student.created_at|timeago }}</td>
+                <td>
+                    <a href="{{ url_for('students.detail', student_id=student.id) }}"
+                       class="btn-secondary text-xs py-1 px-2.5">View</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="py-16 text-center">
+                    <svg class="w-10 h-10 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <p class="text-sm text-slate-400">No students found.</p>
+                    <a href="{{ url_for('students.create') }}" class="btn-primary text-sm mt-4 inline-flex">Add First Student</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if paginator.pages > 1 %}
+<div class="flex items-center justify-between mt-5">
+    <p class="text-sm text-slate-500">{{ paginator.total }} students</p>
+    <div class="flex items-center gap-1">
+        {% if paginator.has_prev %}<a href="?page={{ paginator.prev_num }}&q={{ q }}&source={{ source }}" class="btn-secondary text-xs px-3 py-1.5">← Prev</a>{% endif %}
+        {% for p in paginator.iter_pages() %}
+            {% if p %}
+            <a href="?page={{ p }}&q={{ q }}&source={{ source }}"
+               class="w-8 h-8 flex items-center justify-center rounded-lg text-sm {% if p == paginator.page %}bg-brand-600 text-white{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}">{{ p }}</a>
+            {% else %}<span class="px-1 text-slate-400">…</span>{% endif %}
+        {% endfor %}
+        {% if paginator.has_next %}<a href="?page={{ paginator.next_num }}&q={{ q }}&source={{ source }}" class="btn-secondary text-xs px-3 py-1.5">Next →</a>{% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

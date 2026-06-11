@@ -1,0 +1,92 @@
+{% extends "base/dashboard_layout.html" %}
+{% from "macros/data_entry_sidebar.html" import de_sidebar %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Institutions{% endblock %}
+{% block page_subtitle %}All schools and universities in the catalog.{% endblock %}
+
+{% block topbar_action %}
+<a href="{{ url_for('data_entry.create_school') }}" class="btn-primary text-sm">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Add Institution
+</a>
+{% endblock %}
+
+{% block sidebar_menu %}{{ de_sidebar("schools") }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="card p-4 mb-5">
+    <form method="GET" class="flex flex-wrap gap-3 items-end">
+        <div class="flex-1 min-w-[180px]">
+            <label class="text-xs font-medium text-slate-500 block mb-1">Search</label>
+            <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                <input type="text" name="q" value="{{ q }}" placeholder="School name..." class="input-base pl-9">
+            </div>
+        </div>
+        <div class="w-44">
+            <label class="text-xs font-medium text-slate-500 block mb-1">Country</label>
+            <select name="country_id" class="input-base">
+                <option value="">All Countries</option>
+                {% for c in countries %}
+                <option value="{{ c.id }}" {% if country == c.id|string %}selected{% endif %}>{{ c.flag_emoji or '' }} {{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="w-36">
+            <label class="text-xs font-medium text-slate-500 block mb-1">Status</label>
+            <select name="status" class="input-base">
+                <option value="">All</option>
+                {% for s in ['draft','pending','active','inactive','suspended'] %}
+                <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn-primary">Filter</button>
+        {% if q or country or status %}<a href="{{ url_for('data_entry.schools') }}" class="btn-secondary">Clear</a>{% endif %}
+    </form>
+</div>
+
+<div class="table-container">
+    <table class="table-base">
+        <thead>
+            <tr><th>Institution</th><th>Country</th><th>Programs</th><th>Campuses</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for school in schools %}
+            <tr>
+                <td>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg border border-slate-100 bg-slate-50 flex items-center justify-center text-sm font-bold text-slate-400 flex-shrink-0 overflow-hidden">
+                            {% if school.logo_url %}
+                            <img src="{{ school.logo_url }}" class="w-full h-full object-contain p-0.5" alt="">
+                            {% else %}{{ school.name[0] }}{% endif %}
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-800">{{ school.name }}</p>
+                            <p class="text-xs text-slate-400">{{ school.city.name if school.city else school.address[:30] if school.address else '' }}</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-sm text-slate-600">{{ school.country.name if school.country else '—' }}</td>
+                <td><span class="badge badge-blue">{{ school.programs.count() }}</span></td>
+                <td><span class="badge badge-slate">{{ school.campuses.count() }}</span></td>
+                <td>{{ badges.status_badge(school.status) }}</td>
+                <td>
+                    <div class="flex gap-2">
+                        <a href="{{ url_for('data_entry.school_detail', school_id=school.id) }}" class="btn-primary text-xs py-1 px-2.5">Manage</a>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="py-14 text-center">
+                    <p class="text-sm text-slate-400 mb-3">No institutions added yet.</p>
+                    <a href="{{ url_for('data_entry.create_school') }}" class="btn-primary text-sm inline-flex">Add First Institution</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

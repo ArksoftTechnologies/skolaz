@@ -1,0 +1,102 @@
+{% extends "public/_public_base.html" %}
+{% block title %}{{ school.name }} — Skolaz{% endblock %}
+
+{% block content %}
+{# Hero #}
+<section class="relative h-64 overflow-hidden">
+    {% if school.cover_image_url %}
+    <img src="{{ school.cover_image_url }}" class="absolute inset-0 w-full h-full object-cover" alt="">
+    <div class="absolute inset-0 bg-navy-950/55"></div>
+    {% else %}
+    <div class="absolute inset-0 bg-gradient-to-br from-navy-900 to-brand-700"></div>
+    {% endif %}
+    <div class="relative z-10 h-full flex items-end">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 w-full flex items-end gap-4">
+            <div class="w-16 h-16 rounded-xl bg-white border-2 border-white/30 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {% if school.logo_url %}
+                <img src="{{ school.logo_url }}" class="w-full h-full object-contain p-1" alt="">
+                {% else %}
+                <svg class="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>
+                {% endif %}
+            </div>
+            <div class="text-white">
+                <h1 class="text-2xl font-bold">{{ school.name }}</h1>
+                <p class="text-blue-200 text-sm">{{ school.city.name if school.city else '' }}{% if school.city %}, {% endif %}{{ school.country.name if school.country else '' }}</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        {# Programs #}
+        <div class="lg:col-span-2 space-y-6">
+            {% if school.description %}
+            <div>
+                <h2 class="text-xl font-bold text-slate-900 mb-3">About {{ school.name }}</h2>
+                <p class="text-slate-600 leading-relaxed">{{ school.description }}</p>
+            </div>
+            {% endif %}
+
+            <div>
+                <h2 class="text-xl font-bold text-slate-900 mb-4">Available Programs</h2>
+                <div class="space-y-3">
+                    {% for program in programs %}
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-start justify-between gap-4 hover:border-brand-300 transition-colors">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-semibold text-slate-800">{{ program.name }}</h3>
+                            <div class="flex flex-wrap gap-2 mt-1.5 text-xs text-slate-500">
+                                <span class="bg-slate-100 px-2 py-0.5 rounded">{{ program.level|replace('_',' ')|title }}</span>
+                                {% if program.duration_months %}<span class="bg-slate-100 px-2 py-0.5 rounded">{{ program.duration_months }} months</span>{% endif %}
+                                {% if program.study_mode %}<span class="bg-slate-100 px-2 py-0.5 rounded">{{ program.study_mode|replace('-',' ')|title }}</span>{% endif %}
+                                {% if program.ielts_requirement %}<span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">IELTS {{ program.ielts_requirement }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            {% if program.tuition_fee %}
+                            <p class="font-bold text-slate-900">{{ program.currency }} {{ program.tuition_fee|int }}</p>
+                            <p class="text-xs text-slate-400">per year</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-slate-400 text-sm">No active programs listed.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {# Sidebar #}
+        <div class="space-y-5">
+            <div class="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+                <h3 class="font-semibold text-slate-800">Institution Info</h3>
+                {% for label, value in [
+                    ('Type',          school.institution_type|title if school.institution_type else '—'),
+                    ('Ranking',       ('#' ~ school.ranking) if school.ranking else '—'),
+                    ('Established',   school.established_year or '—'),
+                    ('Int. Students', school.international_students or '—'),
+                    ('Website',       school.website or '—'),
+                ] %}
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-500">{{ label }}</span>
+                    {% if label == 'Website' and school.website %}
+                    <a href="{{ school.website }}" target="_blank" class="text-brand-600 hover:underline text-xs truncate max-w-[140px]">{{ school.website }}</a>
+                    {% else %}
+                    <span class="font-medium text-slate-800">{{ value }}</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% if school.is_partner %}
+            <div class="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                <p class="text-sm font-semibold text-green-800">✓ Skolaz Partner Institution</p>
+                <p class="text-xs text-green-600 mt-1">Commission-based referrals available</p>
+            </div>
+            {% endif %}
+            <a href="{{ url_for('auth.signup') }}" class="btn-cta w-full justify-center">Apply Now</a>
+            <a href="{{ url_for('public.consultation') }}" class="block text-center text-sm text-brand-600 hover:text-brand-700 font-medium">Book a free consultation →</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}User Management{% endblock %}
+{% block page_subtitle %}Manage system users, roles, and access controls.{% endblock %}
+
+{% block sidebar_menu %}
+    {{ sidebar_link('Overview', url_for('super_admin.dashboard'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>') }}
+    {{ sidebar_link('Users & Roles', url_for('super_admin.users'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>', active=True) }}
+    {{ sidebar_link('Agencies', url_for('super_admin.agencies'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>') }}
+    {{ sidebar_link('Audit Log', url_for('super_admin.audit_log'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>') }}
+    {{ sidebar_link('System Settings', url_for('super_admin.settings'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>') }}
+{% endblock %}
+
+{% block page_actions %}
+    <a href="{{ url_for('super_admin.create_user') }}" class="px-4 py-2 bg-skolaz-royal text-white rounded-lg font-medium shadow-sm hover:bg-blue-700 transition-colors text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Add User
+    </a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <!-- Filters -->
+    <div class="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col md:flex-row gap-4 justify-between items-center">
+        <form hx-get="{{ url_for('super_admin.users') }}" hx-target="#users-table" hx-trigger="keyup from:#search delay:300ms, change from:#role, change from:#status" class="flex flex-col md:flex-row gap-4 w-full md:w-auto flex-grow">
+            <div class="relative max-w-sm w-full">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" name="q" id="search" value="{{ q }}" placeholder="Search users by name or email..." class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-skolaz-royal focus:border-skolaz-royal sm:text-sm outline-none transition-shadow">
+            </div>
+            
+            <select name="role" id="role" class="block w-full md:w-40 py-2 px-3 border border-gray-300 rounded-lg focus:ring-skolaz-royal focus:border-skolaz-royal sm:text-sm bg-white outline-none transition-shadow">
+                <option value="">All Roles</option>
+                {% for r in roles %}
+                    <option value="{{ r.slug }}" {% if role == r.slug %}selected{% endif %}>{{ r.name }}</option>
+                {% endfor %}
+            </select>
+            
+            <select name="status" id="status" class="block w-full md:w-40 py-2 px-3 border border-gray-300 rounded-lg focus:ring-skolaz-royal focus:border-skolaz-royal sm:text-sm bg-white outline-none transition-shadow">
+                <option value="">All Statuses</option>
+                <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- Table Container -->
+    <div id="users-table" class="overflow-x-auto">
+        {% include "super_admin/_users_table.html" %}
+    </div>
+</div>
+{% endblock %}

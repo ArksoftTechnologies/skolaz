@@ -1,0 +1,136 @@
+{% extends "base/dashboard_layout.html" %}
+{% from "macros/data_entry_sidebar.html" import de_sidebar %}
+{% import "macros/forms.html" as forms %}
+
+{% block page_title %}{% if edit %}Edit {{ program.name }}{% else %}Add Program{% endif %}{% endblock %}
+{% block page_subtitle %}{% if edit %}Update program details and requirements.{% else %}Add a new degree program to an institution.{% endif %}{% endblock %}
+
+{% block breadcrumb_current %}
+<a href="{{ url_for('data_entry.programs') }}" class="hover:text-slate-900 transition-colors">Programs</a>
+<span class="mx-2 text-slate-300">/</span>
+<span class="text-slate-900 font-medium">{% if edit %}Edit{% else %}Add New{% endif %}</span>
+{% endblock %}
+
+{% block topbar_action %}
+<div class="flex items-center gap-2">
+    <a href="{{ url_for('data_entry.csv_import_page') }}" class="btn-secondary text-sm">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Bulk Import CSV
+    </a>
+</div>
+{% endblock %}
+{% block sidebar_menu %}{{ de_sidebar("programs") }}{% endblock %}
+
+{% block dashboard_content %}
+{% set action = url_for('data_entry.edit_program', program_id=program.id) if edit else url_for('data_entry.create_program_post') %}
+<div class="max-w-3xl">
+    <form method="POST" action="{{ action }}" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        {# Institution + Basic #}
+        <div class="card p-6 space-y-5">
+            {{ forms.form_section('Program Information') }}
+
+            <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-slate-700">Institution <span class="text-red-500">*</span></label>
+                <select name="school_id" class="input-base" required>
+                    <option value="">Select institution...</option>
+                    {% for school in schools %}
+                    <option value="{{ school.id }}"
+                        {% if program and program.school_id == school.id %}selected
+                        {% elif preselect_school and preselect_school == school.id %}selected{% endif %}>
+                        {{ school.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {{ forms.input('name', 'Program Name', value=(program.name if program else ''), required=True, placeholder='e.g. BSc Computer Science') }}
+            {{ forms.input('code', 'Program Code (optional)', value=(program.code or '' if program else ''), placeholder='CSCI-101') }}
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-slate-700">Level <span class="text-red-500">*</span></label>
+                    <select name="level" class="input-base" required>
+                        {% for v, l in [
+                            ('certificate','Certificate'),('diploma','Diploma'),
+                            ('associate','Associate'),('bachelor','Bachelor'),
+                            ('postgraduate','Postgraduate'),('master','Master'),
+                            ('doctorate','Doctorate / PhD'),('language','Language'),
+                            ('foundation','Foundation'),('pre_sessional','Pre-sessional'),
+                            ('short_course','Short Course')] %}
+                        <option value="{{ v }}" {% if program and program.level == v %}selected{% endif %}>{{ l }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-slate-700">Study Mode</label>
+                    <select name="study_mode" class="input-base">
+                        {% for v, l in [('full-time','Full-time'),('part-time','Part-time'),('online','Online'),('blended','Blended')] %}
+                        <option value="{{ v }}" {% if program and program.study_mode == v %}selected{% endif %}>{{ l }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            {{ forms.input('field_of_study', 'Field of Study', value=(program.field_of_study or '' if program else ''), placeholder='e.g. Computer Science & Engineering') }}
+            {{ forms.textarea('description', 'Program Description', value=(program.description or '' if program else ''), rows=3, placeholder='Describe the program, curriculum, and career outcomes...') }}
+        </div>
+
+        {# Duration & Fees #}
+        <div class="card p-6 space-y-5">
+            {{ forms.form_section('Duration & Fees') }}
+            <div class="grid grid-cols-3 gap-4">
+                {{ forms.input('duration_months', 'Duration (months)', value=(program.duration_months|string if program and program.duration_months else ''), placeholder='36') }}
+                {{ forms.input('processing_weeks', 'Processing (weeks)', value=(program.processing_weeks|string if program and program.processing_weeks else ''), placeholder='8') }}
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-slate-700">Currency</label>
+                    <select name="currency" class="input-base">
+                        {% for cur in ['GBP','USD','EUR','CAD','AUD','NZD','NGN'] %}
+                        <option value="{{ cur }}" {% if program and program.currency == cur %}selected{% elif not program and cur == 'GBP' %}selected{% endif %}>{{ cur }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                {{ forms.input('tuition_fee',    'Tuition Fee (per year)', value=(program.tuition_fee|string if program and program.tuition_fee else ''),       placeholder='15000') }}
+                {{ forms.input('application_fee','Application Fee',         value=(program.application_fee|string if program and program.application_fee else ''), placeholder='50') }}
+            </div>
+            {{ forms.input('brochure_url', 'Brochure PDF URL', value=(program.brochure_url or '' if program else ''), placeholder='https://...') }}
+        </div>
+
+        {# Entry Requirements #}
+        <div class="card p-6 space-y-5">
+            {{ forms.form_section('Entry Requirements', 'Leave blank if not required.') }}
+            <div class="grid grid-cols-2 gap-4">
+                {{ forms.input('ielts_requirement',   'IELTS Minimum',    value=(program.ielts_requirement|string if program and program.ielts_requirement else ''),   placeholder='6.5') }}
+                {{ forms.input('toefl_requirement',   'TOEFL Minimum',    value=(program.toefl_requirement|string if program and program.toefl_requirement else ''),   placeholder='90') }}
+                {{ forms.input('pte_requirement',     'PTE Minimum',      value=(program.pte_requirement|string if program and program.pte_requirement else ''),       placeholder='58') }}
+                {{ forms.input('gpa_requirement',     'Min GPA',          value=(program.gpa_requirement|string if program and program.gpa_requirement else ''),       placeholder='3.0') }}
+                {{ forms.input('gmat_requirement',    'GMAT Minimum',     value=(program.gmat_requirement|string if program and program.gmat_requirement else ''),     placeholder='600') }}
+                {{ forms.input('gre_requirement',     'GRE Minimum',      value=(program.gre_requirement|string if program and program.gre_requirement else ''),       placeholder='310') }}
+                {{ forms.input('min_work_experience', 'Work Exp. (years)',value=(program.min_work_experience|string if program and program.min_work_experience else ''),placeholder='2') }}
+            </div>
+        </div>
+
+        {# Status & visibility #}
+        <div class="card p-6 space-y-4">
+            {{ forms.form_section('Visibility') }}
+            <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-slate-700">Status</label>
+                <select name="status" class="input-base">
+                    {% for v, l in [('draft','Draft — staff only'),('active','Active — live on platform'),('inactive','Inactive')] %}
+                    <option value="{{ v }}" {% if program and program.status == v %}selected{% elif not program and v == 'draft' %}selected{% endif %}>{{ l }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {{ forms.checkbox('is_featured', 'Feature this program on homepage', checked=(program.is_featured if program else False)) }}
+        </div>
+
+        <div class="flex items-center gap-3">
+            {{ forms.submit('Save Program') }}
+            <a href="{{ url_for('data_entry.programs') }}" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

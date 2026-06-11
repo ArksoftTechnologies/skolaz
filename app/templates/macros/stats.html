@@ -1,0 +1,52 @@
+{# ══════════════════════════════════════════════════════════════════════════
+   SKOLAZ DESIGN SYSTEM — Macro Library
+   Provides: stat_card, kpi_card, mini_stat, section_header
+══════════════════════════════════════════════════════════════════════════ #}
+
+{# ── KPI / Stat Card ──────────────────────────────────────────────────── #}
+{% macro kpi_card(title, value, icon_svg, accent='blue', trend='', trend_up=True, subtitle='') %}
+<div class="card p-6 flex flex-col gap-4">
+    <div class="flex items-center justify-between">
+        <span class="text-sm font-medium text-slate-500">{{ title }}</span>
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center
+            {% if accent == 'blue'   %}kpi-accent-blue   text-brand-600
+            {% elif accent == 'green'  %}kpi-accent-green  text-green-600
+            {% elif accent == 'amber'  %}kpi-accent-amber  text-amber-600
+            {% elif accent == 'purple' %}kpi-accent-purple text-violet-600
+            {% else %}bg-slate-100 text-slate-500{% endif %}">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{{ icon_svg|safe }}</svg>
+        </div>
+    </div>
+    <div>
+        <p class="text-2xl font-bold text-slate-900 tracking-tight">{{ value }}</p>
+        {% if subtitle %}<p class="text-xs text-slate-400 mt-0.5">{{ subtitle }}</p>{% endif %}
+    </div>
+    {% if trend %}
+    <div class="flex items-center gap-1.5 text-xs font-medium
+        {% if trend_up %}text-green-600{% else %}text-red-500{% endif %}">
+        {% if trend_up %}
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+        {% else %}
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+        {% endif %}
+        <span>{{ trend }}</span>
+        <span class="text-slate-400 font-normal">vs last month</span>
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# Alias: same as kpi_card, backward-compat #}
+{% macro stat_card(title, value, icon, trend='', trend_up=True) %}
+    {{ kpi_card(title, value, icon, trend=trend, trend_up=trend_up) }}
+{% endmacro %}
+
+{# ── Section Header with optional action ─────────────────────────────── #}
+{% macro section_header(title, link_text='', link_url='') %}
+<div class="flex items-center justify-between mb-4">
+    <h2 class="text-sm font-semibold text-slate-700">{{ title }}</h2>
+    {% if link_text %}
+    <a href="{{ link_url }}" class="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">{{ link_text }} →</a>
+    {% endif %}
+</div>
+{% endmacro %}
