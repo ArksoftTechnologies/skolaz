@@ -31,9 +31,13 @@ class BaseConfig:
     )
 
     # ── Database ─────────────────────────────────────────────
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URL", "sqlite:///skolaz_dev.db"
+    # Vercel: read-only fs, use /tmp for SQLite fallback (ephemeral)
+    _default_db = (
+        "sqlite:////tmp/skolaz_dev.db"
+        if os.environ.get("VERCEL")
+        else "sqlite:///skolaz_dev.db"
     )
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", _default_db)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_recycle": 300,

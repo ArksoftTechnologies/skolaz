@@ -24,7 +24,16 @@ def create_app(env: str = None) -> Flask:
     app.config.from_object(cfg)
 
     # ── Ensure Upload Folder Exists ───────────────────────────
-    os.makedirs(app.config.get("UPLOAD_FOLDER", "uploads"), exist_ok=True)
+    # On Vercel the task root is read-only; use /tmp instead
+    upload_folder = app.config.get("UPLOAD_FOLDER", "uploads")
+    if os.environ.get("VERCEL") or not os.access(os.path.dirname(os.path.abspath(upload_folder)) or ".", os.W_OK):
+        upload_folder = "/tmp/uploads"
+        app.config["UPLOAD_FOLDER"] = upload_folder
+    try:
+        os.makedirs(upload_folder, exist_ok=True)
+    except OSError:
+        # Truly read-only environment (Vercel lambda) — skip silently
+        app.config["UPLOAD_FOLDER"] = "/tmp/uploads"
 
     # ── Initialise Extensions ────────────────────────────────
     _init_extensions(app)
