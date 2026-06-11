@@ -1,0 +1,104 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/stats.html" as s %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Agency Portal{% endblock %}
+{% block page_subtitle %}Track your student applications, commissions, and agency performance.{% endblock %}
+
+{% block topbar_action %}
+<a href="{{ url_for('agency.add_student') }}" class="btn-primary text-sm">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Refer Student
+</a>
+{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Dashboard',    url_for('agency.dashboard'),    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>', active=True) }}
+{{ sidebar_link('My Students',  url_for('agency.students'),     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>') }}
+{{ sidebar_link('Commissions',  url_for('agency.commissions'),  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 0V5m0 2H9.5m2.5 0h2.5M12 16v1m0 0v2m0-2H9.5m2.5 0h2.5"/>') }}
+{{ sidebar_link('Institutions', url_for('public.schools'),      '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+
+{# ── Agency Identity Banner #}
+<div class="card p-5 mb-6 flex items-center gap-5">
+    <div class="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0 text-xl font-bold text-amber-700">
+        {{ current_agency.name[0] if current_agency else 'A' }}
+    </div>
+    <div class="flex-1 min-w-0">
+        <h2 class="text-base font-semibold text-slate-900 truncate">{{ current_agency.name if current_agency else 'Agency Portal' }}</h2>
+        <p class="text-sm text-slate-500 mt-0.5">{{ current_agency.country.name if current_agency and current_agency.country else 'Partner Agency' }}</p>
+    </div>
+    <div class="hidden md:flex items-center gap-2">
+        {{ badges.status_badge(current_agency.status if current_agency else 'active') }}
+        <span class="text-xs text-slate-400">Member since {{ current_agency.created_at.strftime('%b %Y') if current_agency and current_agency.created_at else '—' }}</span>
+    </div>
+</div>
+
+{# ── KPI Row ──────────────────────────────────────────────────────── #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    {{ s.kpi_card('Students Referred',  stats.total_students,      '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>',   'blue',   '', True, 'All time') }}
+    {{ s.kpi_card('Active Applications',stats.active_applications,  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>',           'amber',  '', True, 'In pipeline') }}
+    {{ s.kpi_card('Enrolled Students',  stats.enrolled_students,    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 14l9-5-9-5-9 5 9 5zm0 7l9-5-9-5-9 5 9 5z"/>',                                                                                                'green',  '', True, 'Successfully enrolled') }}
+    {{ s.kpi_card('Commission Earned',  stats.commission_earned|currency, '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 0V5m0 2H9.5m2.5 0h2.5M12 16v1m0 0v2m0-2H9.5m2.5 0h2.5"/>', 'purple', '', True, 'YTD earnings') }}
+</div>
+
+{# ── Students + Commissions ───────────────────────────────────────── #}
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+    {# Students list #}
+    <div class="lg:col-span-3 card overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-800">My Students</h2>
+            <a href="{{ url_for('agency.students') }}" class="text-xs font-medium text-brand-600 hover:text-brand-700">View all →</a>
+        </div>
+        <div class="divide-y divide-slate-50">
+            {% for student in recent_students %}
+            <div class="flex items-center gap-3.5 px-6 py-3.5 hover:bg-slate-50/60 transition-colors">
+                <div class="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-700 flex-shrink-0">
+                    {{ student.first_name[0] }}{{ student.last_name[0] }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-800 truncate">{{ student.first_name }} {{ student.last_name }}</p>
+                    <p class="text-xs text-slate-400 truncate mt-0.5">{{ student.email }}</p>
+                </div>
+                {{ badges.status_badge(student.status) }}
+            </div>
+            {% else %}
+            <div class="px-6 py-12 text-center">
+                <svg class="w-9 h-9 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                <p class="text-sm text-slate-400 mb-4">No students referred yet.</p>
+                <a href="{{ url_for('agency.add_student') }}" class="btn-primary text-sm">Refer Your First Student</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# Commission summary #}
+    <div class="lg:col-span-2 card overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-800">Commission Summary</h2>
+        </div>
+        <div class="p-6 space-y-5">
+            {% set commission_data = [
+                ('Paid',    stats.commission_paid|default(0)|currency,    'badge-green'),
+                ('Pending', stats.commission_pending|default(0)|currency, 'badge-amber'),
+                ('Accruing',stats.commission_accruing|default(0)|currency,'badge-blue'),
+            ] %}
+            {% for label, amount, badge_class in commission_data %}
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+                <div class="flex items-center gap-2.5">
+                    <span class="badge {{ badge_class }}">{{ label }}</span>
+                </div>
+                <span class="text-sm font-bold text-slate-800">{{ amount }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="px-6 pb-6">
+            <a href="{{ url_for('agency.commissions') }}" class="btn-secondary w-full justify-center text-sm">View Commission Report</a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

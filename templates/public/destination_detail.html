@@ -1,0 +1,92 @@
+{% extends "public/_public_base.html" %}
+{% block title %}Study in {{ country.name }} — Skolaz{% endblock %}
+
+{% block content %}
+{# Hero #}
+<section class="relative h-72 overflow-hidden">
+    {% if country.cover_image_url %}
+    <img src="{{ country.cover_image_url }}" class="absolute inset-0 w-full h-full object-cover" alt="">
+    <div class="absolute inset-0 bg-navy-950/60"></div>
+    {% else %}
+    <div class="absolute inset-0 bg-gradient-to-br from-navy-900 to-brand-700"></div>
+    {% endif %}
+    <div class="relative z-10 flex items-center justify-center h-full text-center text-white">
+        <div>
+            <div class="text-6xl mb-3">{{ country.flag_emoji or '🌍' }}</div>
+            <h1 class="text-4xl font-bold tracking-tight">Study in {{ country.name }}</h1>
+            <p class="text-blue-200 mt-2">{{ schools|length }} institutions available</p>
+        </div>
+    </div>
+</section>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        {# Main content #}
+        <div class="lg:col-span-2 space-y-8">
+            {% if country.description %}
+            <div>
+                <h2 class="text-xl font-bold text-slate-900 mb-3">About {{ country.name }}</h2>
+                <p class="text-slate-600 leading-relaxed">{{ country.description }}</p>
+            </div>
+            {% endif %}
+
+            {% if country.student_visa_info %}
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-5">
+                <h3 class="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/></svg>
+                    Student Visa Information
+                </h3>
+                <p class="text-sm text-blue-800 leading-relaxed">{{ country.student_visa_info }}</p>
+            </div>
+            {% endif %}
+
+            <div>
+                <h2 class="text-xl font-bold text-slate-900 mb-4">Institutions in {{ country.name }}</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {% for school in schools %}
+                    <a href="{{ url_for('public.school_detail', school_id=school.id) }}"
+                       class="card-pub p-4 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg border border-slate-100 bg-slate-50 flex items-center justify-center flex-shrink-0">
+                            {% if school.logo_url %}
+                            <img src="{{ school.logo_url }}" class="w-full h-full object-contain p-1" alt="">
+                            {% else %}
+                            <svg class="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>
+                            {% endif %}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800 truncate">{{ school.name }}</p>
+                            <p class="text-xs text-slate-400">{{ school.city.name if school.city else '' }}{% if school.ranking %} · #{{ school.ranking }}{% endif %}</p>
+                        </div>
+                    </a>
+                    {% else %}
+                    <p class="text-slate-400 text-sm col-span-full">No schools listed yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {# Sidebar #}
+        <div class="space-y-5">
+            <div class="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+                <h3 class="font-semibold text-slate-800">Quick Facts</h3>
+                {% for label, value in [
+                    ('Currency', (country.currency_symbol or '') ~ ' ' ~ (country.currency or '—')),
+                    ('Language', '—'),
+                    ('Timezone', country.timezone or '—'),
+                    ('Phone Code', country.phone_code or '—'),
+                    ('Institutions', schools|length),
+                ] %}
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-500">{{ label }}</span>
+                    <span class="font-medium text-slate-800">{{ value }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <a href="{{ url_for('public.consultation') }}" class="btn-cta w-full justify-center">
+                Book Free Consultation
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "public/_public_base.html" %}
+{% block title %}Scholarships — Skolaz{% endblock %}
+
+{% block content %}
+<section class="bg-gradient-to-br from-navy-900 to-brand-700 text-white py-16 text-center">
+    <div class="max-w-3xl mx-auto px-4">
+        <h1 class="text-4xl font-bold mb-3">Scholarships & Funding</h1>
+        <p class="text-blue-200 text-lg">Discover merit-based, need-based, and partial scholarships from our partner institutions.</p>
+    </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for scholarship in scholarships %}
+        <div class="card-pub p-5 flex flex-col">
+            <div class="flex items-start justify-between gap-2 mb-3">
+                <h3 class="font-semibold text-slate-900 leading-tight">{{ scholarship.name }}</h3>
+                <span class="text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2.5 py-0.5 flex-shrink-0">
+                    {{ scholarship.scholarship_type|title if scholarship.scholarship_type else 'Scholarship' }}
+                </span>
+            </div>
+            <p class="text-sm text-brand-600 font-medium">{{ scholarship.school.name if scholarship.school else '—' }}</p>
+            {% if scholarship.description %}
+            <p class="text-sm text-slate-500 mt-2 leading-relaxed line-clamp-3">{{ scholarship.description }}</p>
+            {% endif %}
+            <div class="mt-4 pt-4 border-t border-slate-100 space-y-2 text-sm flex-1">
+                {% if scholarship.amount %}
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Award</span>
+                    <span class="font-semibold text-green-700">{{ scholarship.currency }} {{ scholarship.amount|int }}</span>
+                </div>
+                {% endif %}
+                {% if scholarship.deadline %}
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Deadline</span>
+                    <span class="font-medium {% if scholarship.deadline < now().date() %}text-red-500{% else %}text-slate-800{% endif %}">
+                        {{ scholarship.deadline.strftime('%d %b %Y') }}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="mt-4 flex gap-2">
+                {% if scholarship.link %}
+                <a href="{{ scholarship.link }}" target="_blank" rel="noopener" class="flex-1 text-center text-sm border border-brand-200 text-brand-700 rounded-lg py-2 hover:bg-brand-50 transition-colors font-medium">Learn More</a>
+                {% endif %}
+                <a href="{{ url_for('auth.signup') }}" class="flex-1 text-center text-sm bg-brand-600 text-white rounded-lg py-2 hover:bg-brand-700 transition-colors font-medium">Apply</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-full text-center py-16 text-slate-400">No scholarships listed at this time.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

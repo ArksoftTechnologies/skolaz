@@ -1,0 +1,92 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/forms.html" as forms %}
+
+{% block page_title %}Add Student{% endblock %}
+{% block page_subtitle %}Register a new student into the CRM.{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Students', url_for('students.index'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>', active=True) }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-3xl">
+    <form method="POST" action="{{ url_for('students.create_post') }}" class="space-y-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="card p-6 space-y-5">
+            {{ forms.form_section('Personal Information') }}
+            <div class="grid grid-cols-2 gap-4">
+                {{ forms.input('first_name', 'First Name', required=True) }}
+                {{ forms.input('last_name',  'Last Name',  required=True) }}
+            </div>
+            {{ forms.input('email', 'Email Address', type='email', required=True) }}
+            <div class="grid grid-cols-2 gap-4">
+                {{ forms.input('phone',    'Phone',    placeholder='+44 7700 000000') }}
+                {{ forms.input('whatsapp', 'WhatsApp', placeholder='+44 7700 000000') }}
+            </div>
+            {{ forms.select('nationality_country_id', 'Nationality',
+               countries|map(attribute=['id','name'])|list,
+               placeholder='Select country...') }}
+            {{ forms.select('country_of_residence_id', 'Country of Residence',
+               countries|map(attribute=['id','name'])|list,
+               placeholder='Select country...') }}
+        </div>
+
+        <div class="card p-6 space-y-5">
+            {{ forms.form_section('Academic Background') }}
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-slate-700">Highest Qualification</label>
+                    <select name="highest_qualification" class="input-base">
+                        <option value="">Select...</option>
+                        {% for q in ['High School','Diploma','Bachelor','Postgraduate','Master','PhD'] %}
+                        <option value="{{ q }}">{{ q }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-slate-700">English Test</label>
+                    <select name="english_test" class="input-base">
+                        <option value="">None / Not taken</option>
+                        <option value="IELTS">IELTS</option>
+                        <option value="TOEFL">TOEFL</option>
+                        <option value="PTE">PTE</option>
+                        <option value="Duolingo">Duolingo</option>
+                    </select>
+                </div>
+            </div>
+            {{ forms.input('english_score', 'English Test Score', type='number', placeholder='e.g. 6.5') }}
+        </div>
+
+        <div class="card p-6 space-y-5">
+            {{ forms.form_section('CRM Assignment') }}
+            {{ forms.select('primary_advisor_id', 'Assign Advisor',
+               advisors|map(attribute=['id','full_name'])|list,
+               placeholder='Select advisor...') }}
+            {% if agencies %}
+            {{ forms.select('agency_id', 'Referring Agency (optional)',
+               agencies|map(attribute=['id','name'])|list,
+               placeholder='No agency (direct)') }}
+            {% endif %}
+            <div class="space-y-1.5">
+                <label class="block text-sm font-medium text-slate-700">Lead Source</label>
+                <select name="source" class="input-base">
+                    <option value="direct">Direct</option>
+                    <option value="agency">Agency</option>
+                    <option value="referral">Referral</option>
+                    <option value="website">Website</option>
+                    <option value="social_media">Social Media</option>
+                    <option value="event">Event</option>
+                    <option value="walk_in">Walk-in</option>
+                </select>
+            </div>
+            {{ forms.textarea('notes', 'Initial Notes', placeholder='Any notes about this student...', rows=3) }}
+        </div>
+
+        <div class="flex items-center gap-3">
+            {{ forms.submit('Add Student') }}
+            <a href="{{ url_for('students.index') }}" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

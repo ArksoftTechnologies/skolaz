@@ -1,0 +1,67 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Student Applications{% endblock %}
+{% block page_subtitle %}Review and process international student applications.{% endblock %}
+
+{% block sidebar_menu %}
+    {{ sidebar_link('Dashboard', url_for('staff.dashboard'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>') }}
+    {{ sidebar_link('Applications', url_for('staff.applications'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>', active=True) }}
+    {{ sidebar_link('Students', url_for('staff.students'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <!-- Filters -->
+    <div class="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+        <form class="flex gap-4">
+            <select name="stage" class="block w-full md:w-64 py-2 px-3 border border-gray-300 rounded-lg focus:ring-skolaz-royal focus:border-skolaz-royal sm:text-sm bg-white outline-none transition-shadow" onchange="this.form.submit()">
+                <option value="">All Stages</option>
+                <option value="school_review" {% if stage == 'school_review' %}selected{% endif %}>School Review</option>
+                <option value="offer_issued" {% if stage == 'offer_issued' %}selected{% endif %}>Offer Issued</option>
+                <option value="visa_submitted" {% if stage == 'visa_submitted' %}selected{% endif %}>Visa Processing</option>
+                <option value="enrolled" {% if stage == 'enrolled' %}selected{% endif %}>Enrolled</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-white border-b border-gray-100">
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ref ID</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Student</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Program & School</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Stage</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Updated</th>
+                    <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for app in paginator.items %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-skolaz-royal">{{ app.reference_id }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <p class="text-sm font-bold text-gray-900">{{ app.student.first_name }} {{ app.student.last_name }}</p>
+                        <p class="text-xs text-gray-500">{{ app.student.nationality_country.name if app.student.nationality_country else '' }}</p>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <p class="text-sm text-gray-900">{{ app.program.name }}</p>
+                        <p class="text-xs text-gray-500">{{ app.school.name }}</p>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ badges.status_badge(app.current_stage) }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ app.updated_at.strftime('%d %b %Y, %H:%M') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="{{ url_for('applications.detail', app_id=app.id) }}" class="text-skolaz-royal hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors">View</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-10 text-center text-gray-500">No applications match your filter.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

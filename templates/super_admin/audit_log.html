@@ -1,0 +1,113 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Audit Log{% endblock %}
+{% block page_subtitle %}System-wide activity, security events, and data modifications.{% endblock %}
+
+{% block breadcrumb_current %}
+<a href="{{ url_for('super_admin.dashboard') }}" class="hover:text-slate-900 transition-colors">Super Admin</a>
+<span class="mx-2 text-slate-300">/</span>
+<span class="text-slate-900 font-medium">Audit Log</span>
+{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Overview',         url_for('super_admin.dashboard'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>') }}
+{{ sidebar_link('Users & Roles',    url_for('super_admin.users'),    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>') }}
+{{ sidebar_link('Agencies',         url_for('super_admin.agencies'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>') }}
+{{ sidebar_link('Audit Log',        url_for('super_admin.audit_log'),'<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>', active=True) }}
+{{ sidebar_link('Settings',         url_for('super_admin.settings'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="card overflow-hidden">
+    <!-- Filters (Dummy visual for now) -->
+    <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row gap-4 items-center justify-between bg-slate-50/50">
+        <div class="flex items-center gap-3">
+            <input type="text" placeholder="Search events..." class="input-base py-1.5 text-sm w-64">
+            <select class="input-base py-1.5 text-sm w-40">
+                <option>All Modules</option>
+                <option>Auth</option>
+                <option>Applications</option>
+                <option>Users</option>
+            </select>
+        </div>
+        <button class="btn-ghost text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Export CSV
+        </button>
+    </div>
+
+    <!-- Audit Log Table -->
+    <div class="overflow-x-auto">
+        <table class="table-base w-full">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                {% for log in paginator.items %}
+                <tr class="hover:bg-slate-50/70 transition-colors">
+                    <td class="text-xs text-slate-500 whitespace-nowrap font-mono">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>
+                        {% if log.user %}
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 flex-shrink-0">
+                                {{ log.user.initials }}
+                            </div>
+                            <span class="text-sm font-medium text-slate-900">{{ log.user.full_name }}</span>
+                        </div>
+                        {% else %}
+                        <span class="text-sm text-slate-500 italic">System</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.action.startswith('login') %}
+                            <span class="badge badge-green">{{ log.action }}</span>
+                        {% elif log.action.startswith('delete') or log.action.startswith('suspend') %}
+                            <span class="badge badge-red">{{ log.action }}</span>
+                        {% elif log.action.startswith('update') %}
+                            <span class="badge badge-amber">{{ log.action }}</span>
+                        {% else %}
+                            <span class="badge badge-blue">{{ log.action }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-sm text-slate-600 font-mono text-xs">{{ log.entity_type }} ({{ log.entity_id }})</td>
+                    <td class="text-xs text-slate-400 font-mono">{{ log.ip_address or '—' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center">
+                        <svg class="w-8 h-8 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <p class="text-sm text-slate-500">No audit logs available.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if paginator.pages > 1 %}
+    <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+        <p class="text-xs text-slate-500">
+            Showing <span class="font-medium text-slate-900">{{ (paginator.page - 1) * paginator.per_page + 1 }}</span> to 
+            <span class="font-medium text-slate-900">{{ [paginator.page * paginator.per_page, paginator.total]|min }}</span> of 
+            <span class="font-medium text-slate-900">{{ paginator.total }}</span> logs
+        </p>
+        <div class="flex gap-1">
+            {% if paginator.has_prev %}
+            <a href="{{ url_for('super_admin.audit_log', page=paginator.page-1) }}" class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors">Previous</a>
+            {% endif %}
+            {% if paginator.has_next %}
+            <a href="{{ url_for('super_admin.audit_log', page=paginator.page+1) }}" class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors">Next</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

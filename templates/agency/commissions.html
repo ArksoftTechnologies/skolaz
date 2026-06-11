@@ -1,0 +1,65 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+{% import "macros/stats.html" as s %}
+
+{% block page_title %}Commissions{% endblock %}
+{% block page_subtitle %}Your earnings from {{ agency.name }}.{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Dashboard',   url_for('agency.dashboard'),   '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>') }}
+{{ sidebar_link('Students',    url_for('agency.students'),    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>') }}
+{{ sidebar_link('Commissions', url_for('agency.commissions'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>', active=True) }}
+{% endblock %}
+
+{% block dashboard_content %}
+
+{% set total_expected   = commissions|sum(attribute='expected_amount')|float %}
+{% set total_received   = commissions|sum(attribute='received_amount')|float %}
+{% set total_outstanding = total_expected - total_received %}
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    {{ s.kpi_card('Total Expected',    agency.currency ~ ' ' ~ total_expected|int,    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8"/>', 'blue') }}
+    {{ s.kpi_card('Total Received',    agency.currency ~ ' ' ~ total_received|int,    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>', 'green') }}
+    {{ s.kpi_card('Outstanding',       agency.currency ~ ' ' ~ total_outstanding|int, '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>', 'amber') }}
+</div>
+
+<div class="table-container">
+    <table class="table-base">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>School</th>
+                <th>Expected</th>
+                <th>Received</th>
+                <th>Outstanding</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for comm in commissions %}
+            <tr>
+                <td>
+                    {% if comm.application and comm.application.student %}
+                    <p class="text-sm font-semibold text-slate-800">{{ comm.application.student.full_name }}</p>
+                    <p class="text-xs text-slate-400 font-mono">{{ comm.application.reference }}</p>
+                    {% else %}—{% endif %}
+                </td>
+                <td class="text-sm text-slate-600">{{ comm.school.name if comm.school else '—' }}</td>
+                <td class="text-sm font-semibold text-slate-800">{{ comm.currency }} {{ comm.expected_amount|float|int if comm.expected_amount else '—' }}</td>
+                <td class="text-sm text-green-700 font-medium">{{ comm.currency }} {{ comm.received_amount|float|int if comm.received_amount else '0' }}</td>
+                <td class="text-sm {% if comm.outstanding_amount > 0 %}text-amber-600 font-semibold{% else %}text-slate-400{% endif %}">
+                    {{ comm.currency }} {{ comm.outstanding_amount|int }}
+                </td>
+                <td>{{ badges.status_badge(comm.status) }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="py-16 text-center">
+                    <p class="text-sm text-slate-400">No commission records yet.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

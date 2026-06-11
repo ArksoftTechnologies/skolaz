@@ -5,21 +5,7 @@
       "src": "wsgi.py",
       "use": "@vercel/python",
       "config": {
-        "maxLambdaSize": "50mb",
-        "runtime": "python3.12",
-        "includeFiles": [
-          "app/templates/**",
-          "app/static/**",
-          "app/models/**",
-          "app/routes/**",
-          "app/services/**",
-          "app/utils/**",
-          "app/__init__.py",
-          "app/extensions.py",
-          "app/sockets.py",
-          "migrations/**",
-          "config.py"
-        ]
+        "maxLambdaSize": "50mb"
       }
     }
   ],

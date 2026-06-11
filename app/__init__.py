@@ -13,13 +13,21 @@ def create_app(env: str = None) -> Flask:
     Application factory.
     Creates and configures the Flask app for the given environment.
     """
-    # Use absolute paths so Vercel's /var/task layout resolves correctly
-    _base = os.path.dirname(os.path.abspath(__file__))
+    # Use absolute paths so Vercel's /var/task layout resolves correctly.
+    # Vercel bundles everything from the project root, so templates live at
+    # /var/task/templates/ (top-level copy) rather than /var/task/app/templates/
+    _package_dir = os.path.dirname(os.path.abspath(__file__))
+    _project_root = os.path.dirname(_package_dir)
+
+    # Prefer top-level templates/ (works on Vercel); fall back to app/templates/
+    _top_level_templates = os.path.join(_project_root, "templates")
+    _app_templates       = os.path.join(_package_dir,  "templates")
+    _template_folder     = _top_level_templates if os.path.isdir(_top_level_templates) else _app_templates
 
     app = Flask(
         __name__,
-        template_folder=os.path.join(_base, "templates"),
-        static_folder=os.path.join(_base, "static"),
+        template_folder=_template_folder,
+        static_folder=os.path.join(_package_dir, "static"),
     )
 
     # ── Load Configuration ────────────────────────────────────

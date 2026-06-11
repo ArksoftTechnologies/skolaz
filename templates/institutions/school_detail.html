@@ -1,0 +1,139 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}{{ school.name }}{% endblock %}
+{% block page_subtitle %}Institution profile, programs and intake information.{% endblock %}
+
+{% block breadcrumb_current %}
+<a href="{{ url_for('institutions.schools') }}" class="hover:text-slate-900 transition-colors">Schools</a>
+<span class="mx-2 text-slate-300">/</span>
+<span class="text-slate-900 font-medium">{{ school.name }}</span>
+{% endblock %}
+
+{% block page_actions %}
+{% if current_user.is_super_admin or current_user.is_staff %}
+<form method="POST" action="{{ url_for('institutions.toggle_school_status', school_id=school.id) }}" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if school.status != 'active' %}
+    <input type="hidden" name="status" value="active">
+    <button type="submit" class="btn-primary text-sm">Activate School</button>
+    {% else %}
+    <input type="hidden" name="status" value="inactive">
+    <button type="submit" class="btn-secondary text-sm">Deactivate</button>
+    {% endif %}
+</form>
+{% endif %}
+{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Schools',  url_for('institutions.schools'),  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>', active=True) }}
+{{ sidebar_link('Programs', url_for('institutions.programs'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    {# Left info panel #}
+    <div class="space-y-5">
+        <div class="card p-6 text-center">
+            <div class="w-20 h-20 mx-auto rounded-2xl border border-slate-100 bg-slate-50 flex items-center justify-center overflow-hidden mb-4">
+                {% if school.logo_url %}
+                <img src="{{ school.logo_url }}" class="w-full h-full object-contain p-2" alt="">
+                {% else %}
+                <svg class="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                {% endif %}
+            </div>
+            <h2 class="text-lg font-bold text-slate-900">{{ school.name }}</h2>
+            <p class="text-sm text-slate-500 mt-1">
+                {{ school.city.name if school.city else '' }}{% if school.city %}, {% endif %}{{ school.country.name if school.country else '—' }}
+            </p>
+            <div class="flex items-center justify-center gap-2 mt-3 flex-wrap">
+                {{ badges.status_badge(school.status) }}
+                {% if school.is_partner %}<span class="badge badge-green">Partner</span>{% endif %}
+                {% if school.is_featured %}<span class="badge badge-blue">Featured</span>{% endif %}
+            </div>
+        </div>
+
+        <div class="card p-5 space-y-3">
+            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Details</h3>
+            {% for label, value in [
+                ('Type',        school.institution_type|title if school.institution_type else '—'),
+                ('Ranking',     ('#' ~ school.ranking ~ ' ' ~ school.ranking_source) if school.ranking else '—'),
+                ('Established', school.established_year or '—'),
+                ('Int. Students', school.international_students or '—'),
+                ('Acceptance Rate', (school.acceptance_rate|string ~ '%') if school.acceptance_rate else '—'),
+                ('Tuition Range', ('£' ~ school.tuition_min|int ~ ' – £' ~ school.tuition_max|int) if school.tuition_min else '—'),
+                ('Commission', (school.default_commission_pct|string ~ '%') if school.default_commission_pct else '—'),
+                ('Website', school.website or '—'),
+            ] %}
+            <div class="flex justify-between text-sm">
+                <span class="text-slate-500">{{ label }}</span>
+                {% if label == 'Website' and school.website %}
+                <a href="{{ school.website }}" target="_blank" class="text-brand-600 hover:underline truncate max-w-[140px]">{{ school.website }}</a>
+                {% else %}
+                <span class="font-medium text-slate-800">{{ value }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# Programs + description #}
+    <div class="lg:col-span-2 space-y-5">
+        {% if school.description %}
+        <div class="card p-6">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3">About</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">{{ school.description }}</p>
+        </div>
+        {% endif %}
+
+        <div class="card overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-slate-800">Programs ({{ programs|length }})</h3>
+                <a href="{{ url_for('institutions.programs') }}?school_id={{ school.id }}" class="text-xs text-brand-600 hover:text-brand-700 font-medium">View all →</a>
+            </div>
+            <div class="divide-y divide-slate-50">
+                {% for program in programs[:10] %}
+                <div class="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50 transition-colors">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-slate-800 truncate">{{ program.name }}</p>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            {{ program.level|replace('_',' ')|title }}
+                            {% if program.duration_months %} · {{ program.duration_months }} months{% endif %}
+                            {% if program.study_mode %} · {{ program.study_mode|replace('-',' ')|title }}{% endif %}
+                        </p>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        {% if program.tuition_fee %}
+                        <p class="text-sm font-semibold text-slate-800">{{ program.currency }} {{ program.tuition_fee|int }}</p>
+                        {% endif %}
+                        {% if program.ielts_requirement %}
+                        <p class="text-xs text-slate-400">IELTS {{ program.ielts_requirement }}</p>
+                        {% endif %}
+                    </div>
+                    {{ badges.status_badge(program.status) }}
+                </div>
+                {% else %}
+                <div class="py-12 text-center"><p class="text-sm text-slate-400">No programs added yet.</p></div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if school.campuses.count() %}
+        <div class="card overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100">
+                <h3 class="text-sm font-semibold text-slate-800">Campuses</h3>
+            </div>
+            <div class="divide-y divide-slate-50">
+                {% for campus in school.campuses %}
+                <div class="px-5 py-3.5">
+                    <p class="text-sm font-medium text-slate-800">{{ campus.name }} {% if campus.is_main %}<span class="badge badge-blue text-[10px]">Main</span>{% endif %}</p>
+                    <p class="text-xs text-slate-500 mt-0.5">{{ campus.address or '—' }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

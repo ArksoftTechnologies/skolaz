@@ -1,0 +1,157 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Applications{% endblock %}
+{% block page_subtitle %}Full pipeline view across all stages.{% endblock %}
+
+{% block topbar_action %}
+<a href="{{ url_for('applications.create') }}" class="btn-primary text-sm">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    New Application
+</a>
+{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Applications', url_for('applications.index'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>', active=True) }}
+{{ sidebar_link('Students',     url_for('students.index'),     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>') }}
+{{ sidebar_link('Reports',      url_for('reports.index'),      '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+
+{# ── Filters ──────────────────────────────────────────────────── #}
+<div class="card p-4 mb-6">
+    <form method="GET" class="flex flex-wrap gap-3 items-end">
+        <div class="flex-1 min-w-[200px]">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Search</label>
+            <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                <input type="text" name="q" value="{{ q }}" placeholder="Student name or reference..." class="input-base pl-9">
+            </div>
+        </div>
+        <div class="w-44">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Stage</label>
+            <select name="stage" class="input-base">
+                <option value="">All Stages</option>
+                {% for key, label in STAGE_LABELS.items() %}
+                <option value="{{ key }}" {% if stage == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="w-36">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Priority</label>
+            <select name="priority" class="input-base">
+                <option value="">All Priorities</option>
+                <option value="urgent"  {% if priority == 'urgent'  %}selected{% endif %}>Urgent</option>
+                <option value="high"    {% if priority == 'high'    %}selected{% endif %}>High</option>
+                <option value="normal"  {% if priority == 'normal'  %}selected{% endif %}>Normal</option>
+                <option value="low"     {% if priority == 'low'     %}selected{% endif %}>Low</option>
+            </select>
+        </div>
+        <button type="submit" class="btn-primary">Filter</button>
+        {% if q or stage or priority %}
+        <a href="{{ url_for('applications.index') }}" class="btn-secondary">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+{# ── Stage quick-tabs ──────────────────────────────────────────── #}
+<div class="flex gap-1.5 mb-6 overflow-x-auto pb-1">
+    <a href="{{ url_for('applications.index') }}"
+       class="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
+              {% if not stage %}bg-brand-600 text-white{% else %}bg-white border border-slate-200 text-slate-600 hover:border-slate-300{% endif %}">
+        All
+    </a>
+    {% for key, label in STAGE_LABELS.items() %}
+    <a href="{{ url_for('applications.index', stage=key) }}"
+       class="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
+              {% if stage == key %}bg-brand-600 text-white{% else %}bg-white border border-slate-200 text-slate-600 hover:border-slate-300{% endif %}">
+        {{ label }}
+    </a>
+    {% endfor %}
+</div>
+
+{# ── Table ──────────────────────────────────────────────────────── #}
+<div class="table-container">
+    <table class="table-base">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Reference</th>
+                <th>Institution / Program</th>
+                <th>Stage</th>
+                <th>Priority</th>
+                <th>Updated</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in paginator.items %}
+            <tr>
+                <td>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-700 flex-shrink-0">
+                            {{ app.student.initials if app.student else '?' }}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800 truncate">{{ app.student.full_name if app.student else '—' }}</p>
+                            <p class="text-xs text-slate-400 truncate">{{ app.student.email if app.student else '' }}</p>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">{{ app.reference or '—' }}</span>
+                </td>
+                <td>
+                    <p class="text-sm text-slate-800 font-medium truncate max-w-[180px]">{{ app.program.school.name if app.program and app.program.school else '—' }}</p>
+                    <p class="text-xs text-slate-400 truncate max-w-[180px]">{{ app.program.name if app.program else '' }}</p>
+                </td>
+                <td>{{ badges.status_badge(app.current_stage) }}</td>
+                <td>
+                    {% if app.priority == 'urgent' %}<span class="badge badge-red">Urgent</span>
+                    {% elif app.priority == 'high' %}<span class="badge badge-amber">High</span>
+                    {% elif app.priority == 'low' %}<span class="badge badge-slate">Low</span>
+                    {% else %}<span class="badge badge-slate">Normal</span>{% endif %}
+                </td>
+                <td class="text-xs text-slate-400">{{ app.updated_at|timeago }}</td>
+                <td>
+                    <a href="{{ url_for('applications.detail', app_id=app.id) }}"
+                       class="btn-secondary text-xs py-1 px-2.5">View</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="py-16 text-center">
+                    <svg class="w-10 h-10 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <p class="text-sm text-slate-400">No applications found.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{# ── Pagination ─────────────────────────────────────────────────── #}
+{% if paginator.pages > 1 %}
+<div class="flex items-center justify-between mt-5">
+    <p class="text-sm text-slate-500">{{ paginator.total }} results</p>
+    <div class="flex items-center gap-1">
+        {% if paginator.has_prev %}
+        <a href="?page={{ paginator.prev_num }}&q={{ q }}&stage={{ stage }}&priority={{ priority }}" class="btn-secondary text-xs px-3 py-1.5">← Prev</a>
+        {% endif %}
+        {% for p in paginator.iter_pages() %}
+            {% if p %}
+            <a href="?page={{ p }}&q={{ q }}&stage={{ stage }}&priority={{ priority }}"
+               class="w-8 h-8 flex items-center justify-center rounded-lg text-sm transition-colors
+                      {% if p == paginator.page %}bg-brand-600 text-white{% else %}bg-white border border-slate-200 text-slate-600 hover:bg-slate-50{% endif %}">{{ p }}</a>
+            {% else %}
+            <span class="px-1 text-slate-400">…</span>
+            {% endif %}
+        {% endfor %}
+        {% if paginator.has_next %}
+        <a href="?page={{ paginator.next_num }}&q={{ q }}&stage={{ stage }}&priority={{ priority }}" class="btn-secondary text-xs px-3 py-1.5">Next →</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

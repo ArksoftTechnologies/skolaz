@@ -60,3 +60,6 @@ add_bulk_buttons.py
 
 # Node (if any tooling added)
 node_modules/
+
+# top-level templates/ is intentionally committed for Vercel deployment
+# do NOT add templates/ here

@@ -1,0 +1,112 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/stats.html" as s %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Advisor Dashboard{% endblock %}
+{% block page_subtitle %}Your assigned students, pipeline tasks, and upcoming actions.{% endblock %}
+
+{% block topbar_action %}
+<button class="btn-primary text-sm">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+    Log Activity
+</button>
+{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Dashboard',   url_for('advisor.dashboard'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>', active=True) }}
+{{ sidebar_link('My Students', url_for('advisor.students'), '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>') }}
+{{ sidebar_link('Tasks',       url_for('advisor.tasks'),    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+
+{# ── Welcome Banner ───────────────────────────────────────────────── #}
+<div class="card p-6 mb-6 flex items-center justify-between bg-gradient-to-r from-brand-600 to-brand-700 border-0 text-white">
+    <div>
+        <p class="text-sm font-medium text-brand-100">Good {{ 'morning' if now().hour < 12 else ('afternoon' if now().hour < 17 else 'evening') }},</p>
+        <h2 class="text-xl font-bold mt-0.5 tracking-tight">{{ current_user.first_name }} 👋</h2>
+        <p class="text-sm text-brand-200 mt-1.5">You have <span class="font-semibold text-white">{{ stats.pending_tasks }}</span> tasks pending and <span class="font-semibold text-white">{{ stats.active_students }}</span> active students.</p>
+    </div>
+    <div class="hidden md:block">
+        <div class="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center">
+            <svg class="w-8 h-8 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7l3 3m0 0l3-3m-3 3V8"/></svg>
+        </div>
+    </div>
+</div>
+
+{# ── KPI Row ──────────────────────────────────────────────────────── #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    {{ s.kpi_card('Active Students',  stats.active_students, '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>',     'blue') }}
+    {{ s.kpi_card('Pending Tasks',    stats.pending_tasks,   '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>',          'amber') }}
+    {{ s.kpi_card('Pending Offers',   stats.pending_offers,  '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>',                                                              'green') }}
+    {{ s.kpi_card('Missing Documents',stats.missing_docs,    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>',             'purple') }}
+</div>
+
+{# ── Two-column lower grid ─────────────────────────────────────────── #}
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+    {# Student List – left 3 cols #}
+    <div class="lg:col-span-3 card overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-800">My Students</h2>
+            <a href="{{ url_for('advisor.students') }}" class="text-xs font-medium text-brand-600 hover:text-brand-700">View all →</a>
+        </div>
+        <div class="divide-y divide-slate-50">
+            {% for student in recent_students %}
+            <a href="{{ url_for('students.detail', student_id=student.id) }}"
+               class="flex items-center gap-3.5 px-6 py-3.5 hover:bg-slate-50/70 transition-colors group">
+                <div class="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center text-xs font-bold text-brand-700 flex-shrink-0">
+                    {{ student.first_name[0] }}{{ student.last_name[0] }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-slate-800 group-hover:text-slate-900 truncate">{{ student.first_name }} {{ student.last_name }}</p>
+                    <p class="text-xs text-slate-400 truncate mt-0.5">{{ student.email }}</p>
+                </div>
+                <div class="flex-shrink-0">
+                    {{ badges.status_badge(student.status) }}
+                </div>
+                <svg class="w-4 h-4 text-slate-300 group-hover:text-slate-400 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+            {% else %}
+            <div class="px-6 py-12 text-center">
+                <svg class="w-8 h-8 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <p class="text-sm text-slate-400">No students assigned yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# Pending Tasks – right 2 cols #}
+    <div class="lg:col-span-2 card overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h2 class="text-sm font-semibold text-slate-800">My Tasks</h2>
+            <a href="{{ url_for('advisor.tasks') }}" class="text-xs font-medium text-brand-600 hover:text-brand-700">Manage →</a>
+        </div>
+        <div class="divide-y divide-slate-50">
+            {% for task in pending_tasks %}
+            <div class="flex items-start gap-3 px-6 py-3.5">
+                <div class="mt-0.5 flex-shrink-0">
+                    {% if task.priority == 'high' %}
+                    <span class="w-2 h-2 rounded-full bg-red-400 block"></span>
+                    {% elif task.priority == 'medium' %}
+                    <span class="w-2 h-2 rounded-full bg-amber-400 block"></span>
+                    {% else %}
+                    <span class="w-2 h-2 rounded-full bg-slate-300 block"></span>
+                    {% endif %}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-slate-800 leading-tight truncate">{{ task.title }}</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Due {{ task.due_date|timeago if task.due_date else 'No deadline' }}</p>
+                </div>
+            </div>
+            {% else %}
+            <div class="px-6 py-10 text-center">
+                <svg class="w-8 h-8 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-sm text-slate-400">All tasks complete!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

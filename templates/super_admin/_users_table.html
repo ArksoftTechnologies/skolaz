@@ -1,0 +1,78 @@
+{% import "macros/badges.html" as badges %}
+
+<table class="w-full text-left border-collapse">
+    <thead>
+        <tr class="bg-white border-b border-gray-100">
+            <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
+            <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+            <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Joined</th>
+            <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+        {% for user in paginator.items %}
+        <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                    <img class="h-10 w-10 rounded-full border border-gray-200" src="{{ user.avatar_url }}" alt="">
+                    <div class="ml-4">
+                        <p class="text-sm font-bold text-gray-900">{{ user.full_name }}</p>
+                        <p class="text-sm text-gray-500">{{ user.email }}</p>
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">{{ badges.role_badge(user.role.slug) }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">{{ badges.status_badge(user.status) }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.created_at.strftime('%d %b %Y') }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <a href="{{ url_for('super_admin.user_detail', user_id=user.id) }}" class="text-skolaz-royal hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md transition-colors">Manage</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" class="px-6 py-10 text-center">
+                <div class="text-gray-400 mb-2">
+                    <svg class="w-10 h-10 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </div>
+                <p class="text-gray-600 font-medium">No users found</p>
+                <p class="text-sm text-gray-500">Adjust your search or filters</p>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Pagination Controls -->
+{% if paginator.pages > 1 %}
+<div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+    <div class="text-sm text-gray-500">
+        Showing <span class="font-medium text-gray-900">{{ ((paginator.page - 1) * paginator.per_page) + 1 }}</span> to 
+        <span class="font-medium text-gray-900">{{ [paginator.page * paginator.per_page, paginator.total]|min }}</span> of 
+        <span class="font-medium text-gray-900">{{ paginator.total }}</span> users
+    </div>
+    <nav class="flex gap-1" aria-label="Pagination">
+        <!-- Previous Page -->
+        {% if paginator.has_prev %}
+        <a href="?page={{ paginator.prev_num }}&q={{ q }}&role={{ role }}&status={{ status }}" class="px-3 py-1 border border-gray-300 rounded-md bg-white text-gray-500 hover:bg-gray-50">
+            Previous
+        </a>
+        {% else %}
+        <span class="px-3 py-1 border border-gray-200 rounded-md bg-gray-50 text-gray-400 cursor-not-allowed">
+            Previous
+        </span>
+        {% endif %}
+
+        <!-- Next Page -->
+        {% if paginator.has_next %}
+        <a href="?page={{ paginator.next_num }}&q={{ q }}&role={{ role }}&status={{ status }}" class="px-3 py-1 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50">
+            Next
+        </a>
+        {% else %}
+        <span class="px-3 py-1 border border-gray-200 rounded-md bg-gray-50 text-gray-400 cursor-not-allowed">
+            Next
+        </span>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}

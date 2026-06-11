@@ -1,0 +1,100 @@
+{% extends "base/dashboard_layout.html" %}
+{% from "macros/data_entry_sidebar.html" import de_sidebar %}
+{% import "macros/badges.html" as badges %}
+{% import "macros/forms.html" as forms %}
+
+{% block page_title %}States / Provinces{% endblock %}
+{% block page_subtitle %}Manage states and provinces within countries.{% endblock %}
+
+{% block topbar_action %}
+<div class="flex items-center gap-2">
+    <a href="{{ url_for('data_entry.csv_import_page') }}" class="btn-secondary text-sm">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Bulk Import CSV
+    </a>
+</div>
+{% endblock %}
+{% block sidebar_menu %}{{ de_sidebar("states") }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+    {# List #}
+    <div class="xl:col-span-2">
+        <div class="card p-4 mb-4">
+            <form method="GET" class="flex gap-3 items-end flex-wrap">
+                <div class="flex-1 min-w-[180px]">
+                    <label class="text-xs font-medium text-slate-500 block mb-1">Filter by Country</label>
+                    <select name="country_id" class="input-base"
+                            hx-get="{{ url_for('data_entry.states') }}"
+                            hx-target="body" hx-push-url="true" hx-trigger="change">
+                        <option value="">All Countries</option>
+                        {% for c in countries %}
+                        <option value="{{ c.id }}" {% if country_id == c.id %}selected{% endif %}>{{ c.flag_emoji or '' }} {{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="flex-1 min-w-[160px]">
+                    <label class="text-xs font-medium text-slate-500 block mb-1">Search</label>
+                    <input type="text" name="q" value="{{ q }}" placeholder="State name..." class="input-base">
+                </div>
+                <button type="submit" class="btn-primary">Filter</button>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <table class="table-base">
+                <thead>
+                    <tr><th>State / Province</th><th>Country</th><th>Code</th><th>Cities</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for state in states %}
+                    <tr>
+                        <td class="font-semibold text-slate-800">{{ state.name }}</td>
+                        <td class="text-sm text-slate-600">{{ state.country.name if state.country else '—' }}</td>
+                        <td><span class="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">{{ state.code or '—' }}</span></td>
+                        <td>
+                            <a href="{{ url_for('data_entry.cities', state_id=state.id) }}" class="badge badge-blue hover:bg-blue-100 transition-colors">
+                                {{ state.cities.count() }} cities
+                            </a>
+                        </td>
+                        <td>{{ badges.status_badge(state.status) }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('data_entry.delete_state', state_id=state.id) }}"
+                                  onsubmit="return confirm('Delete state {{ state.name }}? This will also delete its cities.')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="text-xs text-red-500 hover:text-red-700">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="py-12 text-center text-sm text-slate-400">No states found. Select a country and add one →</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# Add form #}
+    <div>
+        <div class="card p-6 sticky top-24">
+            <h3 class="text-sm font-semibold text-slate-800 mb-5">Add State / Province</h3>
+            <form method="POST" action="{{ url_for('data_entry.create_state') }}" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-medium text-slate-700">Country <span class="text-red-500">*</span></label>
+                    <select name="country_id" class="input-base" required>
+                        <option value="">Select country...</option>
+                        {% for c in countries %}
+                        <option value="{{ c.id }}" {% if country_id == c.id %}selected{% endif %}>{{ c.flag_emoji or '' }} {{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {{ forms.input('name', 'State / Province Name', required=True, placeholder='e.g. Ontario') }}
+                {{ forms.input('code', 'State Code (optional)', placeholder='ON') }}
+                <div class="pt-2">{{ forms.submit('Add State', full_width=True) }}</div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base/dashboard_layout.html" %}
+{% import "macros/badges.html" as badges %}
+
+{% block page_title %}Documents{% endblock %}
+{% block page_subtitle %}All student documents — review, approve and manage.{% endblock %}
+
+{% block sidebar_menu %}
+{{ sidebar_link('Documents',    url_for('documents.index'),    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>', active=True) }}
+{{ sidebar_link('Students',     url_for('students.index'),     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>') }}
+{% endblock %}
+
+{% block dashboard_content %}
+
+{# Filters #}
+<div class="card p-4 mb-6">
+    <form method="GET" class="flex flex-wrap gap-3 items-end">
+        <div class="flex-1 min-w-[200px]">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Search</label>
+            <div class="relative">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+                <input type="text" name="q" value="{{ q }}" placeholder="Student name or doc type..." class="input-base pl-9">
+            </div>
+        </div>
+        <div class="w-36">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Status</label>
+            <select name="status" class="input-base">
+                <option value="">All Statuses</option>
+                {% for s in DocumentStatus %}
+                <option value="{{ s.value }}" {% if status == s.value %}selected{% endif %}>{{ s.value|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="w-36">
+            <label class="text-xs font-medium text-slate-500 mb-1 block">Category</label>
+            <select name="category" class="input-base">
+                <option value="">All Categories</option>
+                {% for cat in ['academic','identity','financial','visa','other'] %}
+                <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn-primary">Filter</button>
+        {% if q or status or category %}<a href="{{ url_for('documents.index') }}" class="btn-secondary">Clear</a>{% endif %}
+    </form>
+</div>
+
+{# Pending count banner #}
+{% set pending_count = paginator.items | selectattr('status', 'equalto', 'pending') | list | length %}
+{% if pending_count > 0 %}
+<div class="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 mb-5 flex items-center gap-3">
+    <svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <p class="text-sm text-amber-700"><span class="font-semibold">{{ pending_count }}</span> documents on this page are pending review.</p>
+</div>
+{% endif %}
+
+<div class="table-container">
+    <table class="table-base">
+        <thead>
+            <tr>
+                <th>Document</th>
+                <th>Student</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Uploaded</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in paginator.items %}
+            <tr>
+                <td>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-800">{{ doc.doc_type }}</p>
+                            <p class="text-xs text-slate-400">v{{ doc.version }} {% if doc.expiry_date %}· Expires {{ doc.expiry_date.strftime('%d %b %Y') }}{% endif %}</p>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <a href="{{ url_for('students.detail', student_id=doc.student_id) }}" class="text-sm font-medium text-brand-600 hover:text-brand-700">
+                        {{ doc.student.full_name if doc.student else '—' }}
+                    </a>
+                </td>
+                <td><span class="badge badge-slate">{{ doc.category|title }}</span></td>
+                <td>{{ badges.status_badge(doc.status) }}</td>
+                <td class="text-xs text-slate-400">{{ doc.created_at|timeago }}</td>
+                <td>
+                    <div class="flex items-center gap-2">
+                        {% if doc.file_url %}
+                        <a href="{{ doc.file_url }}" target="_blank" class="btn-ghost text-xs px-2 py-1">View</a>
+                        {% endif %}
+                        {% if doc.status == 'pending' %}
+                        <form method="POST" action="{{ url_for('documents.review_document', doc_id=doc.id) }}" class="inline flex gap-1">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button name="action" value="approve"
+                                    class="text-xs px-2.5 py-1 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors font-medium">
+                                Approve
+                            </button>
+                            <button name="action" value="reject"
+                                    class="text-xs px-2.5 py-1 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium">
+                                Reject
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="py-16 text-center">
+                    <svg class="w-10 h-10 text-slate-200 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <p class="text-sm text-slate-400">No documents found.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if paginator.pages > 1 %}
+<div class="flex items-center justify-between mt-5">
+    <p class="text-sm text-slate-500">{{ paginator.total }} documents</p>
+    <div class="flex items-center gap-1">
+        {% if paginator.has_prev %}<a href="?page={{ paginator.prev_num }}&status={{ status }}&category={{ category }}" class="btn-secondary text-xs px-3 py-1.5">← Prev</a>{% endif %}
+        {% for p in paginator.iter_pages() %}
+            {% if p %}<a href="?page={{ p }}&status={{ status }}&category={{ category }}" class="w-8 h-8 flex items-center justify-center rounded-lg text-sm {% if p == paginator.page %}bg-brand-600 text-white{% else %}bg-white border border-slate-200 text-slate-600{% endif %}">{{ p }}</a>
+            {% else %}<span class="px-1 text-slate-400">…</span>{% endif %}
+        {% endfor %}
+        {% if paginator.has_next %}<a href="?page={{ paginator.next_num }}&status={{ status }}&category={{ category }}" class="btn-secondary text-xs px-3 py-1.5">Next →</a>{% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

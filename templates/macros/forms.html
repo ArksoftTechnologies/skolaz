@@ -1,0 +1,90 @@
+{# ══════════════════════════════════════════════════════════════════════════
+   SKOLAZ DESIGN SYSTEM — Form Macros
+══════════════════════════════════════════════════════════════════════════ #}
+
+{% macro input(name, label, type='text', value='', placeholder='', required=False, help_text='') %}
+<div class="space-y-1.5">
+    <label for="{{ name }}" class="block text-sm font-medium text-slate-700">
+        {{ label }}{% if required %}<span class="text-red-500 ml-0.5">*</span>{% endif %}
+    </label>
+    <input
+        type="{{ type }}"
+        name="{{ name }}"
+        id="{{ name }}"
+        value="{{ value }}"
+        placeholder="{{ placeholder }}"
+        {% if required %}required{% endif %}
+        class="input-base">
+    {% if help_text %}
+    <p class="text-xs text-slate-500">{{ help_text }}</p>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro textarea(name, label, value='', placeholder='', required=False, rows=4, help_text='') %}
+<div class="space-y-1.5">
+    <label for="{{ name }}" class="block text-sm font-medium text-slate-700">
+        {{ label }}{% if required %}<span class="text-red-500 ml-0.5">*</span>{% endif %}
+    </label>
+    <textarea
+        name="{{ name }}"
+        id="{{ name }}"
+        rows="{{ rows }}"
+        placeholder="{{ placeholder }}"
+        {% if required %}required{% endif %}
+        class="input-base resize-none">{{ value }}</textarea>
+    {% if help_text %}
+    <p class="text-xs text-slate-500">{{ help_text }}</p>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro select(name, label, options, selected='', required=False, help_text='', placeholder='Select...') %}
+<div class="space-y-1.5">
+    <label for="{{ name }}" class="block text-sm font-medium text-slate-700">
+        {{ label }}{% if required %}<span class="text-red-500 ml-0.5">*</span>{% endif %}
+    </label>
+    <select name="{{ name }}" id="{{ name }}" {% if required %}required{% endif %} class="input-base">
+        <option value="">{{ placeholder }}</option>
+        {% for val, text in options %}
+            <option value="{{ val }}" {% if val|string == selected|string %}selected{% endif %}>{{ text }}</option>
+        {% endfor %}
+    </select>
+    {% if help_text %}
+    <p class="text-xs text-slate-500">{{ help_text }}</p>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro checkbox(name, label, checked=False, help_text='') %}
+<label class="flex items-start gap-3 cursor-pointer group">
+    <div class="flex items-center h-5 mt-0.5">
+        <input type="checkbox" name="{{ name }}" id="{{ name }}" {% if checked %}checked{% endif %}
+               class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 focus:ring-offset-0 cursor-pointer">
+    </div>
+    <div class="text-sm">
+        <span class="font-medium text-slate-700 group-hover:text-slate-900 transition-colors">{{ label }}</span>
+        {% if help_text %}<p class="text-slate-500 mt-0.5">{{ help_text }}</p>{% endif %}
+    </div>
+</label>
+{% endmacro %}
+
+{% macro submit(text='Save Changes', full_width=False, variant='primary') %}
+<button type="submit"
+    class="{% if full_width %}w-full justify-center{% endif %}
+    {% if variant == 'primary' %}btn-primary{% elif variant == 'secondary' %}btn-secondary{% endif %}"
+    x-data="{}"
+    @click="$el.disabled = true; $el.innerHTML = '<svg class=\'w-4 h-4 animate-spin\' fill=\'none\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z\'></path></svg> Saving...'; $el.closest('form').submit()">
+    {{ text }}
+</button>
+{% endmacro %}
+
+{# ── Section Divider for forms ─────────────────────────────────────────── #}
+{% macro form_section(title, description='') %}
+<div class="pt-6 first:pt-0">
+    <div class="mb-5 pb-4 border-b border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-800">{{ title }}</h3>
+        {% if description %}<p class="text-xs text-slate-500 mt-1">{{ description }}</p>{% endif %}
+    </div>
+</div>
+{% endmacro %}

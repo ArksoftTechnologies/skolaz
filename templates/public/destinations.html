@@ -1,0 +1,42 @@
+{% extends "public/_public_base.html" %}
+{% block title %}Study Destinations — Skolaz{% endblock %}
+
+{% block content %}
+<section class="bg-gradient-to-br from-navy-900 to-brand-700 text-white py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-4xl sm:text-5xl font-bold tracking-tight mb-4">Study Destinations</h1>
+        <p class="text-xl text-blue-100 max-w-2xl mx-auto">Explore top study destinations and find the perfect country for your education journey.</p>
+    </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        {% for country in countries %}
+        <a href="{{ url_for('public.destination_detail', iso_code=country.iso_code) }}"
+           class="card-pub group">
+            {% if country.cover_image_url %}
+            <div class="h-40 overflow-hidden">
+                <img src="{{ country.cover_image_url }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="{{ country.name }}">
+            </div>
+            {% else %}
+            <div class="h-40 bg-gradient-to-br from-brand-600 to-brand-800 flex items-center justify-center">
+                <span class="text-5xl">{{ country.flag_emoji or '🌍' }}</span>
+            </div>
+            {% endif %}
+            <div class="p-5">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="text-2xl">{{ country.flag_emoji or '' }}</span>
+                    <h3 class="font-semibold text-slate-900 text-base">{{ country.name }}</h3>
+                </div>
+                <p class="text-sm text-slate-500">{{ country.schools.count() }} institutions</p>
+                {% if country.currency %}
+                <p class="text-xs text-slate-400 mt-1">Currency: {{ country.currency }}</p>
+                {% endif %}
+            </div>
+        </a>
+        {% else %}
+        <div class="col-span-full text-center py-16 text-slate-400">No destinations available yet.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

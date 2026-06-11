@@ -1,0 +1,39 @@
+{# ══════════════════════════════════════════════════════════════════════════
+   SKOLAZ DESIGN SYSTEM — Badge Macros
+══════════════════════════════════════════════════════════════════════════ #}
+
+{% macro status_badge(status) %}
+{% set s = (status or '')|lower %}
+<span class="badge
+    {% if s in ['active', 'approved', 'accepted', 'operational', 'issued', 'enrolled'] %}badge-green
+    {% elif s in ['pending', 'in_review', 'submitted', 'under_review', 'conditional'] %}badge-amber
+    {% elif s in ['rejected', 'failed', 'cancelled', 'expired', 'declined', 'suspended'] %}badge-red
+    {% elif s in ['draft', 'inactive', 'not_started'] %}badge-slate
+    {% elif s in ['offer_issued', 'offer', 'visa_approved'] %}badge-blue
+    {% elif s in ['processing', 'in_progress', 'enrolled', 'visa_applied'] %}badge-purple
+    {% else %}badge-slate{% endif %}">
+    <span class="status-dot
+        {% if s in ['active', 'approved', 'accepted', 'operational', 'issued', 'enrolled'] %}active
+        {% elif s in ['pending', 'in_review', 'submitted', 'under_review', 'conditional'] %}pending
+        {% elif s in ['rejected', 'failed', 'cancelled', 'expired', 'declined', 'suspended'] %}rejected
+        {% else %}inactive{% endif %}"></span>
+    {{ (status or 'Unknown')|replace('_', ' ')|title }}
+</span>
+{% endmacro %}
+
+{% macro role_badge(role_slug) %}
+{% set r = (role_slug or '')|lower %}
+<span class="badge
+    {% if r == 'super_admin' %}badge-purple
+    {% elif r in ['staff', 'advisor'] %}badge-blue
+    {% elif r in ['agency', 'agency_owner', 'agency_member', 'agency_agent'] %}badge-amber
+    {% elif r == 'student' %}badge-green
+    {% elif r == 'data_entry' %}badge-slate
+    {% else %}badge-slate{% endif %}">
+    {{ (role_slug or '')|replace('_', ' ')|title }}
+</span>
+{% endmacro %}
+
+{% macro pill(text, color='slate') %}
+<span class="badge badge-{{ color }}">{{ text }}</span>
+{% endmacro %}
