@@ -6,7 +6,13 @@
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "50mb",
-        "runtime": "python3.13"
+        "runtime": "python3.12",
+        "includeFiles": [
+          "app/**",
+          "migrations/**",
+          "config.py",
+          "wsgi.py"
+        ]
       }
     }
   ],
@@ -17,7 +23,6 @@
     }
   ],
   "env": {
-    "FLASK_ENV": "production",
-    "STORAGE_BACKEND": "local"
+    "FLASK_ENV": "production"
   }
 }
